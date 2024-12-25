@@ -6,10 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Baby, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signIn, signUp } from '@/lib/auth';
 
@@ -32,9 +31,9 @@ export function AuthForm({ defaultTab = 'signin' }: AuthFormProps) {
     setLoading(true);
     setError('');
     try {
-      const { accountType: type, isNewAccount } = defaultTab === 'signup'
+      const { accountType: type, isNewAccount, ...result } = defaultTab === 'signup'
         ? await signUp(email, password, accountType)
-        : await signIn(email, password);
+        : await signIn(email, password, accountType);
       
       // Pour l'inscription d'un enfant
       if (defaultTab === 'signup' && accountType === 'child') {
@@ -44,7 +43,8 @@ export function AuthForm({ defaultTab = 'signin' }: AuthFormProps) {
 
       // Pour les parents ou la connexion
       if (type === 'parent') {
-        if (isNewAccount) {
+        // Check if onboarding is completed
+        if (isNewAccount || 'hasCompletedOnboarding' in result && !result.hasCompletedOnboarding) {
           router.push('/onboarding');
         } else {
           router.push('/dashboard');
@@ -83,7 +83,6 @@ export function AuthForm({ defaultTab = 'signin' }: AuthFormProps) {
               Retour à l'accueil
             </Button>
             <Button 
-              variant="secondary" 
               className="w-full"
               onClick={() => {
                 setChildSignupSuccess(false);
@@ -120,20 +119,26 @@ export function AuthForm({ defaultTab = 'signin' }: AuthFormProps) {
           )}
           <div className="space-y-3">
             <Label>Type de compte</Label>
-            <RadioGroup
-              defaultValue="parent"
-              onValueChange={(value) => setAccountType(value as 'parent' | 'child')}
-              className="flex flex-col space-y-1"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="parent" id="parent" />
-                <Label htmlFor="parent">Parent</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="child" id="child" />
-                <Label htmlFor="child">Enfant</Label>
-              </div>
-            </RadioGroup>
+            <div className="flex space-x-4 justify-center">
+              <Button 
+                type="button"
+                variant={accountType === 'parent' ? 'default' : 'outline'}
+                onClick={() => setAccountType('parent')}
+                className="flex items-center space-x-2 w-40"
+              >
+                <Users className="h-5 w-5" />
+                <span>Parent</span>
+              </Button>
+              <Button 
+                type="button"
+                variant={accountType === 'child' ? 'default' : 'outline'}
+                onClick={() => setAccountType('child')}
+                className="flex items-center space-x-2 w-40"
+              >
+                <Baby className="h-5 w-5" />
+                <span>Enfant</span>
+              </Button>
+            </div>
           </div>
 
           <div>

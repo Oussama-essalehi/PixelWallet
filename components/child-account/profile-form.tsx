@@ -111,8 +111,8 @@ export function ChildProfileForm({ childEmail, onSuccess }: ChildProfileFormProp
 
   // Fonctions utilitaires pour générer le numéro de carte et la date d'expiration
   function generateVirtualCardNumber() {
-    // Génère un numéro de carte virtuelle de 16 chiffres
-    return Array.from({ length: 16 }, () => Math.floor(Math.random() * 10)).join('');
+    // Génère un numéro de carte virtuelle de 16 chiffres sans décimales
+    return Array.from({ length: 16 }, () => Math.floor(Math.random() * 10).toString()).join('');
   }
 
   function generateExpiryDate() {

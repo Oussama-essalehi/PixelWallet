@@ -28,7 +28,7 @@ export function ChildDashboardOverview({ account }: ChildDashboardOverviewProps)
   return (
     <div>
       <h1 className="text-2xl font-bold mb-8">
-        Bienvenue, {account.first_name} !
+        Content de te revoir, {account.first_name} !
       </h1>
 
       <div className="grid md:grid-cols-2 gap-6 mb-8">

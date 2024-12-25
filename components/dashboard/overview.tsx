@@ -74,7 +74,7 @@ export function Overview() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Tableau de bord Parent</h1>
+        <h1 className="text-2xl font-bold">Tableau de bord</h1>
         <Link href="/dashboard/ajouter-enfant">
           <Button>
             <Plus className="mr-2 h-4 w-4" />

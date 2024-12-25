@@ -43,13 +43,38 @@ CREATE TABLE child_accounts (
 -- Transactions table
 CREATE TABLE transactions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    parent_id UUID REFERENCES parent_profiles(id) ON DELETE CASCADE,
     child_account_id UUID REFERENCES child_accounts(id) ON DELETE CASCADE,
     amount DECIMAL(10,2) NOT NULL,
-    type TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('credit', 'debit', 'transfer')),
     description TEXT,
-    status TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('pending', 'completed', 'failed')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
+
+-- Function to update child account balance after transaction
+CREATE OR REPLACE FUNCTION update_child_account_balance()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.type = 'credit' AND NEW.status = 'completed' THEN
+        UPDATE child_accounts
+        SET current_balance = current_balance + NEW.amount
+        WHERE id = NEW.child_account_id;
+    ELSIF NEW.type = 'debit' AND NEW.status = 'completed' THEN
+        UPDATE child_accounts
+        SET current_balance = current_balance - NEW.amount
+        WHERE id = NEW.child_account_id;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to call the balance update function after each transaction
+CREATE TRIGGER update_balance_after_transaction
+AFTER INSERT OR UPDATE ON transactions
+FOR EACH ROW
+EXECUTE FUNCTION update_child_account_balance();
 
 -- Create virtual_cards table
 CREATE TABLE IF NOT EXISTS virtual_cards (
@@ -291,3 +316,31 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Enable Row Level Security for transactions table
+ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+
+-- Policy to allow parents to insert transactions for their own child accounts
+CREATE POLICY "Parents can insert transactions for their children" 
+ON transactions 
+FOR INSERT 
+WITH CHECK (
+    -- Verify that the parent_id matches the authenticated user's parent profile
+    parent_id IN (
+        SELECT id 
+        FROM parent_profiles 
+        WHERE user_id = auth.uid()
+    )
+);
+
+-- Policy to allow parents to view their own transactions
+CREATE POLICY "Parents can view their own transactions" 
+ON transactions 
+FOR SELECT 
+USING (
+    parent_id IN (
+        SELECT id 
+        FROM parent_profiles 
+        WHERE user_id = auth.uid()
+    )
+);

@@ -55,9 +55,11 @@ export default function OnboardingPage() {
       const today = new Date();
       const age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
+      const dayDiff = today.getDate() - birthDate.getDate();
       
-      if (age < 18 || (age === 18 && monthDiff < 0)) {
+      if (age < 18 || (age === 18 && (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)))) {
         setAgeError('Vous devez avoir au moins 18 ans pour créer un compte');
+        setLoading(false);
         return;
       }
 
@@ -65,7 +67,8 @@ export default function OnboardingPage() {
         .from('parent_profiles')
         .insert([{
           user_id: user?.id,
-          ...formData
+          ...formData,
+          birth_date: new Date(formData.birth_date).toISOString().split('T')[0] // Ensure correct date format
         }]);
 
       if (error) throw error;

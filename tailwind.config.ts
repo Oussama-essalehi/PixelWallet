@@ -72,7 +72,17 @@ const config: Config = {
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [
+    require('tailwindcss-animate'),
+    function ({ addBase, config }) {
+      addBase({
+        '*:focus': {
+          outline: 'none',
+          boxShadow: 'none',
+        },
+      });
+    },
+  ],
 };
 
 export default config;

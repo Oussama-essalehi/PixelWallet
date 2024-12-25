@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Search } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
 
 interface SearchFormProps {
   onSuccess: (email: string) => void;
@@ -20,6 +21,7 @@ interface UserResult {
 }
 
 export function SearchForm({ onSuccess }: SearchFormProps) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,6 +37,15 @@ export function SearchForm({ onSuccess }: SearchFormProps) {
         throw new Error('Veuillez entrer au moins 3 caractères');
       }
 
+      // First, get the current parent's ID
+      const { data: parentProfile, error: parentError } = await supabase
+        .from('parent_profiles')
+        .select('id')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (parentError) throw parentError;
+
       // Use the search_users_by_email function
       const { data, error } = await supabase
         .rpc('search_users_by_email', {
@@ -43,12 +54,27 @@ export function SearchForm({ onSuccess }: SearchFormProps) {
 
       if (error) throw error;
 
-      setResults(data || []);
+      // Filter out emails already linked to child accounts for this parent
+      const { data: existingChildAccounts, error: childError } = await supabase
+        .from('child_accounts')
+        .select('email')
+        .eq('parent_id', parentProfile.id);
+
+      if (childError) throw childError;
+
+      const existingChildEmails = existingChildAccounts.map(account => account.email);
+
+      // Filter results to exclude existing child account emails
+      const filteredResults = data.filter(
+        (user: UserResult) => !existingChildEmails.includes(user.email)
+      );
+
+      setResults(filteredResults);
       
-      if (data.length === 0) {
+      if (filteredResults.length === 0) {
         toast({
           title: 'Aucun résultat',
-          description: 'Aucun compte trouvé avec cet email',
+          description: 'Aucun compte disponible trouvé avec cet email',
         });
       }
     } catch (error: any) {

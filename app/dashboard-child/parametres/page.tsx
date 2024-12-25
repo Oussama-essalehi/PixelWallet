@@ -20,7 +20,6 @@ export default function ParametresPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <ShieldCheck className="mr-2 h-5 w-5 text-green-600" />
               Informations personnelles
             </CardTitle>
           </CardHeader>
@@ -56,7 +55,6 @@ export default function ParametresPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <CreditCard className="mr-2 h-5 w-5 text-blue-600" />
               Limites de dépenses
             </CardTitle>
           </CardHeader>
@@ -89,7 +87,6 @@ export default function ParametresPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Ban className="mr-2 h-5 w-5 text-red-600" />
               Restrictions
             </CardTitle>
           </CardHeader>
@@ -124,8 +121,7 @@ export default function ParametresPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <AlertTriangle className="mr-2 h-5 w-5 text-yellow-600" />
-              Solde et Alertes
+              Solde et alertes
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

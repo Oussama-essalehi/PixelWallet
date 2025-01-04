@@ -6,7 +6,7 @@ PixelWallet est une solution de paiement sécurisée destinée aux mineurs pour 
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/PixelWallet.git
+    git clone https://github.com/Hamagistral/PixelWallet.git
     ```
 2. Navigate to the project directory:
     ```bash

@@ -1,4 +1,4 @@
-import { WalletIcon, Users, CreditCard, Shield } from 'lucide-react';
+import { WalletIcon, Users, ShieldIcon, UserCheckIcon, BookOpenIcon, SlidersHorizontal, Gamepad2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/navbar';
 import Link from 'next/link';
@@ -7,17 +7,20 @@ const steps = [
   {
     number: 1,
     title: "Créez un compte",
-    description: "Inscrivez-vous en tant que parent et ajoutez vos enfants"
+    description: "Inscrivez-vous en tant que parent et ajoutez vos enfants",
+    icon: Users
   },
   {
     number: 2,
     title: "Configurez les contrôles",
-    description: "Définissez les limites et les restrictions pour chaque enfant"
+    description: "Définissez les limites et les restrictions pour chaque enfant",
+    icon: SlidersHorizontal
   },
   {
     number: 3,
     title: "Laissez-les jouer",
-    description: "Vos enfants peuvent faire leurs achats en toute sécurité"
+    description: "Vos enfants peuvent faire leurs achats en toute sécurité",
+    icon: Gamepad2
   }
 ];
 
@@ -25,78 +28,127 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
+
+      {/* Soft Gradient Background Blobs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-indigo-300 rounded-full opacity-20 blur-3xl animate-blob"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-purple-300 rounded-full opacity-20 blur-3xl animate-blob animation-delay-2000"></div>
+      </div>
       
       {/* Hero Section */}
-      <section className="py-20 text-center">
-        <h1 className="text-6xl font-bold text-indigo-700 mb-6">PixelWallet</h1>
-        <p className="text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-          Le portefeuille gaming sécurisé pour les mineurs
-        </p>
-        <div className="flex justify-center gap-4">
-          <Link href="/auth">
-            <Button size="lg">Commencer</Button>
-          </Link>
-          <Button variant="outline" size="lg">En savoir plus</Button>
+      <section className="relative z-10 py-20 text-center">
+        <div className="container mx-auto px-4">
+          <h1 className="text-6xl font-bold mb-6 text-indigo-700 
+            animate-gradient-x hover:animate-gradient-xy transition-all duration-300">
+            PixelWallet
+          </h1>
+          <p className="text-2xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed 
+            transform transition-all duration-500 hover:scale-[1.02]">
+            Le portefeuille gaming sécurisé pour les mineurs, conçu pour la tranquillité des parents
+          </p>
+          
+          <div className="flex justify-center gap-4">
+            <Link href="/auth" className="group">
+              <Button 
+                size="lg" 
+                className="transition-all duration-300 
+                  group-hover:shadow-xl group-hover:shadow-indigo-500/40 
+                  group-hover:scale-105 
+                  transform"
+              >
+                Commencer
+              </Button>
+            </Link>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="transition-all duration-300 
+                hover:bg-indigo-50 
+                hover:border-indigo-500 
+                hover:text-indigo-700
+                transform hover:scale-105"
+            >
+              En savoir plus
+            </Button>
+          </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-16">Fonctionnalités Clés</h2>
+      {/* Fonctionnalités principales */}
+      <section id="features" className="py-20 bg-indigo-50 backdrop-blur-lg relative z-10">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-bold text-center mb-16">Fonctionnalités principales</h2>
           <div className="grid md:grid-cols-3 gap-12">
-            <div className="text-center">
-              <Users className="w-12 h-12 text-indigo-700 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Comptes Familiaux</h3>
-              <p className="text-gray-600">Créez des comptes pour vous et vos enfants, tous gérés en un seul endroit.</p>
+            <div className="text-center p-6 rounded-xl bg-white shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 group">
+              <div className="w-16 h-16 mx-auto mb-4 bg-indigo-100 rounded-full flex items-center justify-center group-hover:bg-indigo-200 transition-all duration-300">
+                <ShieldIcon className="w-8 h-8 text-indigo-700 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2 text-indigo-800">Sécurité</h3>
+              <p className="text-gray-600">Protégez vos données financières avec des paiements sécurisés et une traçabilité complète des transactions.</p>
             </div>
-            <div className="text-center">
-              <CreditCard className="w-12 h-12 text-indigo-700 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Transferts Faciles</h3>
-              <p className="text-gray-600">Créditez les comptes de vos enfants en quelques clics.</p>
+            <div className="text-center p-6 rounded-xl bg-white shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 group">
+              <div className="w-16 h-16 mx-auto mb-4 bg-indigo-100 rounded-full flex items-center justify-center group-hover:bg-indigo-200 transition-all duration-300">
+                <UserCheckIcon className="w-8 h-8 text-indigo-700 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2 text-indigo-800">Contrôle parental</h3>
+              <p className="text-gray-600">Supervisez les dépenses en temps réel et définissez des limites d'achat flexibles.</p>
             </div>
-            <div className="text-center">
-              <Shield className="w-12 h-12 text-indigo-700 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Sécurisé</h3>
-              <p className="text-gray-600">Sécurité de niveau bancaire pour protéger les finances de votre famille.</p>
+            <div className="text-center p-6 rounded-xl bg-white shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 group">
+              <div className="w-16 h-16 mx-auto mb-4 bg-indigo-100 rounded-full flex items-center justify-center group-hover:bg-indigo-200 transition-all duration-300">
+                <BookOpenIcon className="w-8 h-8 text-indigo-700 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2 text-indigo-800">Éducation financière</h3>
+              <p className="text-gray-600">Apprenez à vos enfants la gestion de l'argent tout en effectuant des achats sécurisés.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* How it Works Section */}
-      <section className="py-24 px-12 bg-indigo-50">
-        <div className="container max-w-7xl mx-auto px-6">
-          <h2 className="text-4xl font-bold text-center text-gray-900 mb-16">
+      {/* How it works Section */}
+      <section id="features" className="py-20 bg-white backdrop-blur-lg relative z-10">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-bold text-center mb-16">
             Comment ça fonctionne
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            {steps.map((step) => (
-              <div key={step.number} className="relative">
-                <div className="absolute -left-4 -top-4 w-12 h-12 bg-indigo-700 text-white rounded-full flex items-center justify-center text-xl font-bold">
-                  {step.number}
-                </div>
-                <div className="p-6 bg-white rounded-xl shadow-sm">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          <div className="grid md:grid-cols-3 gap-12">
+            {steps.map((step) => {
+              const Icon = step.icon;
+              return (
+                <div 
+                  key={step.number} 
+                  className="text-center p-6 rounded-xl bg-indigo-100 border-2 border-indigo-200 shadow-lg 
+                    transition-all duration-300 
+                    hover:shadow-xl 
+                    hover:scale-105 
+                    group"
+                >
+                  <div className="w-16 h-16 mx-auto mb-4 bg-white rounded-full 
+                    flex items-center justify-center 
+                    transition-all duration-300">
+                    <Icon className="w-8 h-8 text-indigo-700 
+                      group-hover:scale-110 
+                      transition-transform duration-300" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2 text-indigo-800">
                     {step.title}
                   </h3>
                   <p className="text-gray-600">
                     {step.description}
                   </p>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 bg-white">
+      <section id="pricing" className="py-24 bg-indigo-50">
         <div className="container mx-auto px-6">
           <h2 className="text-4xl font-bold text-center text-gray-900 mb-8">
             Tarification
           </h2>
-          <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+          <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md border border-gray-100">
             <ul className="space-y-4 mb-8">
               <li className="flex items-center gap-2 text-gray-700">
                 <div className="h-2 w-2 bg-indigo-700 rounded-full"></div>
@@ -166,7 +218,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="mt-12 text-center text-gray-600">
-            © 2024 PixelWallet. Tous droits réservés.
+            &copy; 2024 PixelWallet. Tous droits réservés.
           </div>
         </div>
       </footer>

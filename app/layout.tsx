@@ -7,8 +7,8 @@ import { Toaster } from '@/components/ui/toaster';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'PixelWallet - Your Digital Asset Manager',
-  description: 'Secure digital wallet for managing cryptocurrencies and digital assets',
+  title: 'PixelWallet',
+  description: 'Le portefeuille gaming sécurisé pour les mineurs',
 };
 
 export default function RootLayout({

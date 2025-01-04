@@ -12,7 +12,7 @@ interface VirtualCardProps {
 
 export function VirtualCard({ firstName, lastName, cardNumber, expiryDate }: VirtualCardProps) {
   return (
-    <Card className="relative w-full max-w-[420px] aspect-[1.8/1] bg-gradient-to-br from-indigo-600 to-indigo-800 text-white p-6 overflow-hidden">
+    <Card className="relative w-full h-full max-w-[420px] aspect-[1.8/1] bg-gradient-to-br from-indigo-600 to-indigo-800 text-white p-6 overflow-hidden">
       <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
       
       {/* Logo */}
@@ -29,7 +29,7 @@ export function VirtualCard({ firstName, lastName, cardNumber, expiryDate }: Vir
       </div>
 
       {/* Card Holder & Expiry */}
-      <div className="flex justify-between items-end mt-auto">
+      <div className="flex justify-between items-end mt-auto absolute bottom-6 left-6 right-6">
         <div>
           <div className="text-xs opacity-75 mb-1">TITULAIRE</div>
           <div className="font-medium">{`${firstName} ${lastName}`}</div>

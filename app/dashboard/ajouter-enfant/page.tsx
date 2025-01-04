@@ -9,7 +9,7 @@ export default function AddChildPage() {
   const [childEmail, setChildEmail] = useState('');
 
   return (
-    <div className="p-6">
+    <div className="p-6 flex flex-col h-full">
       <h1 className="text-2xl font-bold mb-6">Ajouter un compte enfant</h1>
       
       {step === 1 ? (

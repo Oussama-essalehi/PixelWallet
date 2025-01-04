@@ -51,7 +51,9 @@ export default function ParametresPage() {
           .select('*')
           .eq('user_id', user?.id)
           .single();
-
+        
+        console.log('Profile data:', data);
+        console.log('Error if any:', error);
         if (error) throw error;
         setProfile(data);
       } catch (error) {

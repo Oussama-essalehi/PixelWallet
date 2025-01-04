@@ -16,7 +16,7 @@ interface Transaction {
   amount: number;
   type: string;
   status: string;
-  description: string;
+  payment_method: string;
   created_at: string;
   child_account: {
     first_name: string;
@@ -47,24 +47,22 @@ export default function HistoriquePage() {
         if (parentError) throw parentError;
 
         // Fetch transactions with child account details
-        const { data: transactionData, error } = await supabase
-          .from('transactions')
+        const { data: rechargeData, error } = await supabase
+          .from('recharges')
           .select(`
             id, 
             amount, 
-            type, 
             status, 
-            description, 
+            payment_method,
             created_at,
             child_account:child_accounts(first_name, last_name)
           `)
           .eq('parent_id', parentProfile.id)
-          .eq('type', 'credit')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
 
-        setTransactions(transactionData as Transaction[]);
+        setTransactions(rechargeData as Transaction[]);
       } catch (error: any) {
         toast({
           title: 'Erreur',
@@ -111,7 +109,7 @@ export default function HistoriquePage() {
                   <TableHead>Date</TableHead>
                   <TableHead>Compte Enfant</TableHead>
                   <TableHead>Montant</TableHead>
-                  <TableHead>Description</TableHead>
+                  <TableHead>Méthode de paiement</TableHead>
                   <TableHead>Statut</TableHead>
                 </TableRow>
               </TableHeader>
@@ -127,7 +125,7 @@ export default function HistoriquePage() {
                     <TableCell className="font-medium text-green-600">
                       +{transaction.amount.toFixed(2)} €
                     </TableCell>
-                    <TableCell>{transaction.description}</TableCell>
+                    <TableCell>{transaction.payment_method}</TableCell>
                     <TableCell>
                       <Badge variant={getStatusBadgeVariant(transaction.status)}>
                         {transaction.status === 'completed' ? 'Terminé' : 

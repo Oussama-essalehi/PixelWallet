@@ -1,6 +1,6 @@
 'use client';
 
-import { LayoutDashboard, CreditCard, Settings, LogOut, WalletIcon } from 'lucide-react';
+import { LayoutDashboard, CreditCard, Settings, LogOut, WalletIcon, History } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -58,7 +58,7 @@ export function ChildDashboardSidebar() {
 
   const navItems = [
     { href: '/dashboard-child', label: 'Aperçu', icon: LayoutDashboard },
-    { href: '/dashboard-child/historique', label: 'Historique', icon: CreditCard },
+    { href: '/dashboard-child/historique', label: 'Historique', icon: History },
     { href: '/dashboard-child/parametres', label: 'Paramètres', icon: Settings },
   ];
 

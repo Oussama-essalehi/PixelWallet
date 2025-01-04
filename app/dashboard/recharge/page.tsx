@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
-import { CircleDollarSign, CreditCard } from 'lucide-react';
+import { CircleDollarSign, CreditCard, PiggyBank } from 'lucide-react';
 
 interface ChildAccount {
   id: string;
@@ -97,33 +97,33 @@ export default function RechargePage() {
   
       if (childError) throw new Error('Compte enfant invalide');
   
-      // Insert transaction
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert({
-          parent_id: parentProfile.id,
-          child_account_id: childAccount.id,
-          amount: parsedAmount,
-          type: 'credit',
-          description: 'Rechargement de compte',
-          status: 'completed'
-        });
-  
-      if (transactionError) throw transactionError;
-  
+      // Insert recharge
+      const { error: rechargeError } = await supabase
+          .from('recharges')
+          .insert([{
+              parent_id: parentProfile.id,
+              child_account_id: childAccount.id,
+              amount: parsedAmount,
+              status: 'completed', // ou 'completed' selon votre logique
+              payment_method: 'Credit Card', // ou autre méthode de paiement
+          }]);
+
+      if (rechargeError) throw rechargeError;
+      
+      console.log(rechargeError);
       toast({
-        title: 'Succès',
-        description: `Rechargement de ${parsedAmount}€ effectué`,
+          title: 'Succès',
+          description: 'Recharge effectuée avec succès',
       });
-  
-      // Reset form
-      setSelectedChildId(null);
+
+      // Réinitialiser les champs
       setAmount('');
+      setSelectedChildId(null);
     } catch (error: any) {
       toast({
-        title: 'Erreur',
-        description: error.message || 'Impossible d\'effectuer le rechargement',
-        variant: 'destructive',
+          title: 'Erreur',
+          description: error.message,
+          variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -133,7 +133,7 @@ export default function RechargePage() {
   return (
     <div className="p-6">
       <div className="flex items-center mb-8">
-        <CircleDollarSign className="h-8 w-8 mr-4 text-indigo-700" />
+        <PiggyBank className="h-8 w-8 mr-4 text-indigo-700" />
         <h1 className="text-2xl font-bold">Recharger un compte enfant</h1>
       </div>
       

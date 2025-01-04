@@ -23,7 +23,7 @@ export function Navbar() {
           </div>
           <div className="flex items-center space-x-4">
             {user ? (
-              <Link href="/dashboard">
+              <Link href={user.role === 'child' ? "/dashboard-child" : "/dashboard"}>
                 <Button>Tableau de bord</Button>
               </Link>
             ) : (

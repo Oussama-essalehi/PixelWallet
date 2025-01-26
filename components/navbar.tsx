@@ -22,7 +22,7 @@ export function Navbar() {
           <div className="hidden md:flex items-center space-x-8">
             <Link href="#features" className="text-gray-600 hover:text-gray-900">Fonctionnalités</Link>
             <Link href="#pricing" className="text-gray-600 hover:text-gray-900">Tarifs</Link>
-            <Link href="#about" className="text-gray-600 hover:text-gray-900">À propos</Link>
+            <Link href="/about" className="text-gray-600 hover:text-gray-900">À propos</Link>
           </div>
           <div className="flex items-center space-x-4">
             {user ? (

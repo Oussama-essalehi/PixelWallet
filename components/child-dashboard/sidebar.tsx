@@ -66,7 +66,11 @@ export function ChildDashboardSidebar() {
     <div className="flex flex-col h-screen w-64 bg-white border-r">
       <div className="p-4 border-b">
         <Link href="/" className="flex items-center">
-          <WalletIcon className="h-8 w-8 text-indigo-700" />
+        <img
+                src="https://i.postimg.cc/WzR8pdg4/LOGO-PIXELWALLET.png"
+                alt="PixelWallet Logo"
+                className="h-8 w-8"
+              />
           <span className="ml-2 text-2xl font-bold text-indigo-700">PixelWallet</span>
         </Link>
       </div>

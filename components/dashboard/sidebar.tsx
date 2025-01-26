@@ -62,7 +62,11 @@ export function Sidebar() {
     <div className="flex flex-col h-screen w-64 bg-white border-r">
       <div className="p-4">
         <Link href="/dashboard" className="flex items-center">
-          <WalletIcon className="h-8 w-8 text-indigo-700" />
+            <img
+                src="https://i.postimg.cc/WzR8pdg4/LOGO-PIXELWALLET.png"
+                alt="PixelWallet Logo"
+                className="h-8 w-8"
+              />
           <span className="ml-2 text-xl font-bold text-indigo-700">PixelWallet</span>
         </Link>
         <hr className="mt-6 h-px border-t-0 bg-transparent bg-gradient-to-r from-transparent via-neutral-500 to-transparent opacity-25 dark:via-neutral-400" />

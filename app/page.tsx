@@ -59,17 +59,19 @@ export default function HomePage() {
                 Commencer
               </Button>
             </Link>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="transition-all duration-300 
-                hover:bg-indigo-50 
-                hover:border-indigo-500 
-                hover:text-indigo-700
-                transform hover:scale-105"
-            >
-              En savoir plus
-            </Button>
+            <Link href="/about" className="group">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="transition-all duration-300 
+                  hover:bg-indigo-50 
+                  hover:border-indigo-500 
+                  hover:text-indigo-700
+                  transform hover:scale-105"
+              >
+                En savoir plus
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

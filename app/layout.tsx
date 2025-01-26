@@ -9,6 +9,11 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'PixelWallet',
   description: 'Le portefeuille gaming sécurisé pour les mineurs',
+  icons: {
+    icon: [
+      { url: 'https://i.postimg.cc/WzR8pdg4/LOGO-PIXELWALLET.png' },
+    ],
+  },
 };
 
 export default function RootLayout({

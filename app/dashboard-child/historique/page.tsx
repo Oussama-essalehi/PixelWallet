@@ -45,7 +45,8 @@ export default function HistoriquePage() {
           *,
           parent:parent_profiles(first_name, last_name)
         `)
-        .eq('child_account_id', account?.id);
+        .eq('child_account_id', account?.id)
+        .order('created_at', { ascending: false });
 
       console.log('Recharges data:', data);
       if (error) {

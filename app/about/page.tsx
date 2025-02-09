@@ -59,7 +59,7 @@ export default function AboutPage() {
         </section>
 
         {/* Features */}
-        <section className="space-y-6">
+        <section className="space-y-6 bg-gray-50 p-8 rounded-xl">
           <h2 className="text-2xl font-semibold text-center">Nos Solutions Innovantes</h2>
           <div className="grid gap-6 md:grid-cols-3">
             <Card className="p-6 space-y-4">

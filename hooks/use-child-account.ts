@@ -19,8 +19,14 @@ export function useChildAccount() {
         .select(`
           *,
           virtual_cards (
-            card_number,
-            expiry_date
+            stripe_card_id,
+            stripe_cardholder_id,
+            last4,
+            brand,
+            exp_month,
+            exp_year,
+            status,
+            currency
           )
         `)
         .eq('email', user.email)

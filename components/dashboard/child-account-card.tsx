@@ -17,7 +17,7 @@ export function ChildAccountCard({ account }: ChildAccountCardProps) {
         <CardTitle className="flex justify-between items-center">
           <span>{account.first_name} {account.last_name}</span>
           <span className="text-lg font-normal text-gray-600">
-            €{account.current_balance.toFixed(2)}
+            €{account.balance.toFixed(2)}
           </span>
         </CardTitle>
       </CardHeader>

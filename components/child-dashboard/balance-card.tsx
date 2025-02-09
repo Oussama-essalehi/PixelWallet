@@ -18,7 +18,7 @@ export function BalanceCard({ balance, lastRecharge }: BalanceCardProps) {
         <CardTitle>Solde disponible</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold">{balance.toFixed(2)} €</div>
+        <div className="text-3xl font-bold">{balance} €</div>
         {lastRecharge && (
           <p className="text-sm text-gray-500 mt-2">
             Dernière recharge : {lastRecharge.amount.toFixed(2)} € par {lastRecharge.by} le{' '}

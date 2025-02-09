@@ -35,19 +35,75 @@ CREATE TABLE IF NOT EXISTS child_accounts (
     max_monthly_purchases INTEGER NOT NULL,
     max_purchase_amount DECIMAL(10,2) NOT NULL,
     max_monthly_spend DECIMAL(10,2) NOT NULL,
-    current_balance DECIMAL(10,2) DEFAULT 0.00,
+    balance DECIMAL(10,2) DEFAULT 0.00,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- Create virtual_cards table
-CREATE TABLE IF NOT EXISTS virtual_cards (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  child_account_id uuid REFERENCES child_accounts(id) NOT NULL UNIQUE,
-  card_number text NOT NULL,
-  expiry_date text NOT NULL,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
+-- Drop existing virtual_cards table if it exists
+DROP TABLE IF EXISTS virtual_cards;
+
+-- Create virtual_cards table with updated structure
+CREATE TABLE virtual_cards (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    child_account_id UUID REFERENCES child_accounts(id) ON DELETE CASCADE,
+    stripe_card_id TEXT NOT NULL,
+    stripe_cardholder_id TEXT NOT NULL,
+    last4 TEXT NOT NULL,
+    brand TEXT NOT NULL,
+    exp_month INTEGER NOT NULL,
+    exp_year INTEGER NOT NULL,
+    status TEXT NOT NULL,
+    currency TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Enable Row Level Security
+ALTER TABLE virtual_cards ENABLE ROW LEVEL SECURITY;
+
+-- Policy for parents to view virtual cards of their children
+CREATE POLICY "Parents can view their children's virtual cards"
+    ON virtual_cards FOR SELECT
+    USING (
+        EXISTS (
+            SELECT 1 FROM child_accounts ca
+            JOIN parent_profiles pp ON ca.parent_id = pp.id
+            WHERE ca.id = virtual_cards.child_account_id
+            AND pp.user_id = auth.uid()
+        )
+    );
+
+-- Policy for parents to create virtual cards for their children
+CREATE POLICY "Parents can create virtual cards for their children"
+    ON virtual_cards FOR INSERT
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM child_accounts ca
+            JOIN parent_profiles pp ON ca.parent_id = pp.id
+            WHERE ca.id = child_account_id
+            AND pp.user_id = auth.uid()
+        )
+    );
+
+-- Policy for parents to update virtual cards of their children
+CREATE POLICY "Parents can update their children's virtual cards"
+    ON virtual_cards FOR UPDATE
+    USING (
+        EXISTS (
+            SELECT 1 FROM child_accounts ca
+            JOIN parent_profiles pp ON ca.parent_id = pp.id
+            WHERE ca.id = virtual_cards.child_account_id
+            AND pp.user_id = auth.uid()
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM child_accounts ca
+            JOIN parent_profiles pp ON ca.parent_id = pp.id
+            WHERE ca.id = virtual_cards.child_account_id
+            AND pp.user_id = auth.uid()
+        )
 );
 
 -- Recharges table
@@ -61,6 +117,30 @@ CREATE TABLE recharges (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
+
+-- Enable RLS on recharges table
+ALTER TABLE recharges ENABLE ROW LEVEL SECURITY;
+
+-- Policies for recharges table
+CREATE POLICY "Parents can view their own recharges"
+  ON recharges FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM parent_profiles pp
+      WHERE pp.id = recharges.parent_id
+      AND pp.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Parents can insert recharges"
+  ON recharges FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM parent_profiles pp
+      WHERE pp.id = recharges.parent_id
+      AND pp.user_id = auth.uid()
+    )
+  );
 
 -- Game requests table
 CREATE TABLE game_requests (
@@ -134,30 +214,39 @@ CREATE POLICY "Users can insert their own profile"
 -- Grant necessary permissions
 GRANT ALL ON parent_profiles TO authenticated;
 
--- Policies for child_accounts
+-- Enable RLS on child_accounts
 ALTER TABLE child_accounts ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Parents can view their children's accounts"
-    ON child_accounts FOR SELECT
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM parent_profiles WHERE id = child_accounts.parent_id
-        ) OR 
-        auth.uid() = user_id
-    );
+
+-- Policies for child_accounts
+CREATE POLICY "Parents can view their own children's accounts"
+  ON child_accounts FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM parent_profiles pp
+      WHERE pp.id = child_accounts.parent_id
+      AND pp.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Parents can update their own children's accounts"
+  ON child_accounts FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM parent_profiles pp
+      WHERE pp.id = child_accounts.parent_id
+      AND pp.user_id = auth.uid()
+    )
+  );
+
 CREATE POLICY "Parents can insert child accounts"
-    ON child_accounts FOR INSERT
-    WITH CHECK (
-        auth.uid() IN (
-            SELECT user_id FROM parent_profiles WHERE id = child_accounts.parent_id
-        )
-    );
-CREATE POLICY "Parents can update their children's accounts"
-    ON child_accounts FOR UPDATE
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM parent_profiles WHERE id = child_accounts.parent_id
-        )
-    );
+  ON child_accounts FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM parent_profiles pp
+      WHERE pp.id = child_accounts.parent_id
+      AND pp.user_id = auth.uid()
+    )
+  );
 
 -- Policies for recharges
 ALTER TABLE recharges ENABLE ROW LEVEL SECURITY;
@@ -275,7 +364,7 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.status = 'completed' THEN
         UPDATE child_accounts
-        SET current_balance = current_balance + NEW.amount
+        SET balance = balance + NEW.amount
         WHERE id = NEW.child_account_id;
     END IF;
     RETURN NEW;
@@ -376,6 +465,19 @@ $$;
 
 -- Grant access to authenticated users only
 grant execute on function search_users_by_email to authenticated;
+
+-- Function to update child balance
+CREATE OR REPLACE FUNCTION update_child_balance(p_child_id UUID, p_amount DECIMAL)
+RETURNS void AS $$
+BEGIN
+  UPDATE child_accounts
+  SET current_balance = current_balance + p_amount
+  WHERE id = p_child_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Policy for update_child_balance function
+GRANT EXECUTE ON FUNCTION update_child_balance TO authenticated;
 
 -- Indexes
 CREATE INDEX idx_parent_profiles_user_id ON parent_profiles(user_id);

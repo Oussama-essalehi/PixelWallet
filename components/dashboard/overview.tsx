@@ -12,10 +12,18 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 
 type ChildAccount = Database['public']['Tables']['child_accounts']['Row'] & {
-  virtual_card: {
-    card_number: string;
-    expiry_date: string;
-  }
+  virtual_cards: {
+    id: string;
+    balance: number;
+    stripe_card_id: string;
+    stripe_cardholder_id: string;
+    last4: string;
+    brand: string;
+    exp_month: number;
+    exp_year: number;
+    status: string;
+    currency: string;
+  }[]
 };
 
 export function Overview() {
@@ -34,28 +42,37 @@ export function Overview() {
           .single();
 
         if (parentProfile) {
-          const { data: accounts, error } = await supabase
+          // Get child accounts with their virtual cards
+          const { data: childAccounts, error: childAccountsError } = await supabase
             .from('child_accounts')
             .select(`
               *,
-              virtual_card:virtual_cards(card_number, expiry_date)
+              virtual_cards (
+                id,
+                balance,
+                stripe_card_id,
+                stripe_cardholder_id,
+                last4,
+                brand,
+                exp_month,
+                exp_year,
+                status,
+                currency
+              )
             `)
             .eq('parent_id', parentProfile.id);
 
-          if (error) throw error;
-          
-          // Transformer les données pour correspondre au type ChildAccount
-          const enrichedAccounts = accounts?.map(account => ({
-            ...account,
-            virtual_card: account.virtual_card ? {
-              card_number: account.virtual_card.card_number,
-              expiry_date: account.virtual_card.expiry_date
-            } : undefined
-          })) || [];
+          if (childAccountsError) {
+            console.error('Error fetching child accounts:', childAccountsError);
+            throw childAccountsError;
+          }
 
-          setChildAccounts(enrichedAccounts);
+          console.log('Fetched child accounts:', childAccounts);
+
+          setChildAccounts(childAccounts);
         }
-      } catch (error) {
+      } catch (error: any) {
+        console.error('Error in fetchChildAccounts:', error);
         toast({
           title: 'Erreur',
           description: 'Impossible de charger les comptes enfants',
@@ -83,7 +100,9 @@ export function Overview() {
         </Link>
       </div>
 
-      {childAccounts.length === 0 ? (
+      {loading ? (
+        <div>Chargement...</div>
+      ) : childAccounts.length === 0 ? (
         <EmptyState />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

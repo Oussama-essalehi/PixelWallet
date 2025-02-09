@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { VirtualCard } from './virtual-card';
 import { BalanceCard } from './balance-card';
-import { TransactionHistory } from './transaction-history';
 import { OverviewStats } from './overview-stats';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -61,18 +60,19 @@ export function ChildDashboardOverview({ account }: ChildDashboardOverviewProps)
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-8">
-        Content de te revoir, {account.first_name} !
-      </h1>
-
       <div className="grid md:grid-cols-2 gap-6 mb-8">
         <VirtualCard
           firstName={account.first_name}
           lastName={account.last_name}
-          cardNumber={account.virtual_cards.card_number}
-          expiryDate={account.virtual_cards.expiry_date}
+          brand={account.virtual_cards.brand}
+          last4={account.virtual_cards.last4}
+          expMonth={account.virtual_cards.exp_month}
+          expYear={account.virtual_cards.exp_year}
+          status={account.virtual_cards.status}
+          currency={account.virtual_cards.currency}
+          cardId={account.virtual_cards.stripe_card_id}
         />
-        <BalanceCard balance={account.current_balance} />
+        <BalanceCard balance={account.virtual_cards.balance} />
       </div>
 
       <Tabs defaultValue="overview" className="w-full">

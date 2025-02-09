@@ -1,6 +1,6 @@
 'use client';
 
-import { WalletIcon, LayoutDashboard, CreditCard, Settings, LogOut, CircleDollarSign, History, PiggyBank } from 'lucide-react';
+import { LayoutDashboard, Settings, LogOut, History, HandCoins } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -48,7 +48,7 @@ export function Sidebar() {
 
   const navItems = [
     { href: '/dashboard', label: 'Aperçu', icon: LayoutDashboard },
-    { href: '/dashboard/recharge', label: 'Recharger', icon: PiggyBank},
+    { href: '/dashboard/recharge', label: 'Recharger', icon: HandCoins},
     { href: '/dashboard/historique', label: 'Historique', icon: History },
     { href: '/dashboard/parametres', label: 'Paramètres', icon: Settings },
   ];

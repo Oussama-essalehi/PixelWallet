@@ -127,7 +127,7 @@ export default function ParametresPage() {
           <CardContent className="space-y-4">
             <div>
               <p className="text-sm text-gray-500">Solde actuel</p>
-              <p className="font-medium text-xl text-green-600">{account.current_balance} €</p>
+              <p className="font-medium text-xl text-green-600">{account.balance} €</p>
             </div>
           </CardContent>
         </Card>

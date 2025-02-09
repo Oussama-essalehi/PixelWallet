@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { GAME_CATEGORIES } from '@/lib/constants/child-account';
 
 const AGE_RESTRICTIONS = [
@@ -34,16 +35,18 @@ export function ChildProfileForm({ childEmail, onSuccess }: ChildProfileFormProp
   const [loading, setLoading] = useState(false);
   const [bannedCategories, setBannedCategories] = useState<string[]>([]);
   const [ageRestrictions, setAgeRestrictions] = useState<string[]>([]);
+  const [gender, setGender] = useState('M'); 
   
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
     birth_date: '',
-    max_daily_purchases: '3',
-    max_weekly_purchases: '10',
-    max_monthly_purchases: '20',
-    max_purchase_amount: '50',
-    max_monthly_spend: '100',
+    gender,
+    max_daily_purchases: '1',
+    max_weekly_purchases: '3',
+    max_monthly_purchases: '5',
+    max_purchase_amount: '30',
+    max_monthly_spend: '50',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,6 +81,7 @@ export function ChildProfileForm({ childEmail, onSuccess }: ChildProfileFormProp
           parent_id: parentProfile.id,
           user_id: userData.id,
           email: childEmail,
+          gender,
           ...formData,
           banned_categories: bannedCategories,
           age_restrictions: ageRestrictions,
@@ -92,11 +96,6 @@ export function ChildProfileForm({ childEmail, onSuccess }: ChildProfileFormProp
 
       if (error) throw error;
 
-      toast({
-        title: 'Succès',
-        description: 'Le compte enfant a été configuré avec succès',
-      });
-
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -108,19 +107,6 @@ export function ChildProfileForm({ childEmail, onSuccess }: ChildProfileFormProp
       setLoading(false);
     }
   };
-
-  // Fonctions utilitaires pour générer le numéro de carte et la date d'expiration
-  function generateVirtualCardNumber() {
-    // Génère un numéro de carte virtuelle de 16 chiffres sans décimales
-    return Array.from({ length: 16 }, () => Math.floor(Math.random() * 10).toString()).join('');
-  }
-
-  function generateExpiryDate() {
-    // Génère une date d'expiration 3 ans dans le futur
-    const now = new Date();
-    const expiryDate = new Date(now.getFullYear() + 3, now.getMonth());
-    return expiryDate.toISOString().split('T')[0];
-  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -163,16 +149,25 @@ export function ChildProfileForm({ childEmail, onSuccess }: ChildProfileFormProp
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="birth_date">Date de naissance</Label>
-              <Input
-                id="birth_date"
-                name="birth_date"
-                type="date"
-                value={formData.birth_date}
-                onChange={handleChange}
-                required
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="birth_date">Date de naissance</Label>
+                <Input
+                  id="birth_date"
+                  name="birth_date"
+                  type="date"
+                  value={formData.birth_date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <Label className="block text-sm font-medium text-gray-700">Genre</Label>
+                <select value={gender} onChange={(e) => setGender(e.target.value)} className="mt-1 block w-full">
+                    <option value="M">Masculin</option>
+                    <option value="F">Féminin</option>
+                </select>
+            </div>
             </div>
           </div>
 

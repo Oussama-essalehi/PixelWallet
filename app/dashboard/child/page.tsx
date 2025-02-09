@@ -14,12 +14,19 @@ interface ChildAccount {
   id: string;
   first_name: string;
   last_name: string;
-  current_balance: number;
+  balance: number;
   max_daily_purchases: number;
   max_monthly_spend: number;
   virtual_card: {
-    card_number: string;
-    expiry_date: string;
+    stripe_card_id: string;
+    stripe_cardholder_id: string;
+    last4: string;
+    brand: string;
+    exp_month: number;
+    exp_year: number;
+    status: string;
+    currency: string;
+    balance: number;
   };
 }
 
@@ -41,8 +48,14 @@ export default function ChildDashboardPage() {
         .select(`
           *,
           virtual_card:virtual_cards(
-            card_number,
-            expiry_date
+            stripe_card_id,
+            stripe_cardholder_id,
+            last4,
+            brand,
+            exp_month,
+            exp_year,
+            status,
+            currency
           )
         `)
         .eq('email', user.email)
@@ -94,13 +107,17 @@ export default function ChildDashboardPage() {
           <VirtualCard
             firstName={account.first_name}
             lastName={account.last_name}
-            cardNumber={account.virtual_card.card_number}
-            expiryDate={account.virtual_card.expiry_date}
+            brand={account.virtual_card.brand}
+            last4={account.virtual_card.last4}
+            expMonth={account.virtual_card.exp_month}
+            expYear={account.virtual_card.exp_year}
+            status={account.virtual_card.status}
+            currency={account.virtual_card.currency}
           />
         </div>
         <div>
           <BalanceCard
-            balance={account.current_balance}
+            balance={account.balance}
             lastRecharge={{
               amount: 50,
               date: '2024-03-20',

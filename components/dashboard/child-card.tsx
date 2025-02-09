@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
@@ -8,22 +9,33 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { 
   CreditCard, 
   GamepadIcon, 
-  TrendingUp, 
+  Pen, 
+  TrendingUp,
+  Eye
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/lib/database.types';
 import { VirtualCard } from '../child-dashboard/virtual-card';
-import { GamePurchaseCategory, AgeRestriction } from '@/lib/database.types';
+import { EditChildProfileForm } from '../child-account/edit-profile-form';
 
 type ChildAccount = Database['public']['Tables']['child_accounts']['Row'] & {
   parent_id: string;
-  virtual_card?: {
-    card_number: string;
-    expiry_date: string;
+  banned_categories?: string[];
+  age_restrictions?: string[];
+  virtual_cards?: {
+    id: string;
+    balance: number;
+    stripe_card_id: string;
+    stripe_cardholder_id: string;
+    last4: string;
+    brand: string;
+    exp_month: number;
+    exp_year: number;
+    status: string;
+    currency: string;
   }
 };
 
@@ -60,8 +72,11 @@ interface ChildDetails {
 }
 
 export function ChildCard({ account }: { account: ChildAccount }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [details, setDetails] = useState<ChildDetails | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const fetchChildDetails = async () => {
     if (details) return;
@@ -75,11 +90,7 @@ export function ChildCard({ account }: { account: ChildAccount }) {
         .order('purchase_date', { ascending: false })
         .limit(10);
 
-      console.log('Game purchases data:', gamePurchasesData);
-
-      if (gamePurchasesError) {
-        throw gamePurchasesError;
-      }
+      if (gamePurchasesError) throw gamePurchasesError;
 
       // Calculate total spent
       const totalSpent = gamePurchasesData.reduce((sum, purchase) => sum + purchase.amount, 0);
@@ -103,29 +114,29 @@ export function ChildCard({ account }: { account: ChildAccount }) {
         }))
         .sort((a, b) => b.amount - a.amount);
 
-      // Prepare recent purchases
-      const recentPurchases = gamePurchasesData.map(purchase => ({
-        id: purchase.id,
-        type: 'game' as const,
-        amount: purchase.amount,
-        merchant: purchase.merchant,
-        date: new Date(purchase.purchase_date).toLocaleDateString(),
-        category: purchase.category,
-        details: {
-          game_name: purchase.game_name,
-          age_restriction: purchase.age_restriction,
-          platform: purchase.platform,
-          description: purchase.description
-        }
-      }));
-
       setDetails({
         totalSpent,
-        currentBalance: account.current_balance,
+        currentBalance: account.virtual_cards?.balance || 0,
         maxMonthlySpend: account.max_monthly_spend || 0,
         spendingByCategory,
-        recentPurchases,
-        gamePurchases: gamePurchasesData
+        recentPurchases: gamePurchasesData.map(purchase => ({
+          id: purchase.id,
+          type: 'game',
+          amount: purchase.amount,
+          merchant: purchase.merchant,
+          date: new Date(purchase.purchase_date).toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
+          category: purchase.category,
+          details: {
+            game_name: purchase.game_name,
+            age_restriction: purchase.age_restriction,
+            platform: purchase.platform,
+            description: purchase.description
+          }
+        }))
       });
     } catch (error) {
       console.error('Error fetching child details:', error);
@@ -134,155 +145,123 @@ export function ChildCard({ account }: { account: ChildAccount }) {
     }
   };
 
-  const firstNameInitial = account.first_name.charAt(0).toUpperCase();
-
+  console.log(account.first_name, account.last_name, account.virtual_cards?.last4);
+  
   return (
-    <div>
-      <Card className="w-full max-w-md">
-        <div className="p-4 flex items-center justify-between">
+    <Card className="overflow-hidden">
+      <div className="p-6">
+        {/* Header with Avatar and Name */}
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-4">
-            <div className="w-10 h-10 bg-indigo-500 text-white rounded-full flex items-center justify-center font-bold">
-              {firstNameInitial}
-            </div>
+            <Avatar>
+              <AvatarImage src={`https://avatar.vercel.sh/${account.id}`} />
+              <AvatarFallback>{account.first_name[0]}{account.last_name[0]}</AvatarFallback>
+            </Avatar>
             <div>
               <h3 className="text-lg font-semibold">{account.first_name} {account.last_name}</h3>
-              <p className="text-2xl font-bold">{account.current_balance.toFixed(2)} €</p>
+              <p className="text-sm text-gray-500">{account.email}</p>
             </div>
           </div>
         </div>
-      
-        {account.virtual_card && (
-          <div className='p-2'>
-            <VirtualCard 
-              firstName={account.first_name} 
-              lastName={account.last_name} 
-              cardNumber={account.virtual_card.card_number} 
-              expiryDate={account.virtual_card.expiry_date} 
-            />
-          </div>
+
+        {/* Virtual Card Display */}
+        {account.virtual_cards ? (
+          <VirtualCard
+            firstName={account.first_name}
+            lastName={account.last_name}
+            last4={account.virtual_cards.last4}
+            brand={account.virtual_cards.brand}
+            expMonth={account.virtual_cards.exp_month}
+            expYear={account.virtual_cards.exp_year}
+            status={account.virtual_cards.status}
+            currency={account.virtual_cards.currency}
+          />
+        ) : (
+          <Card className="relative h-[200px] w-[350px] overflow-hidden rounded-xl bg-gradient-to-br from-gray-200 to-gray-300 p-6">
+            <div className="flex h-full flex-col items-center justify-center text-center text-gray-600">
+              <CreditCard className="mb-2 h-12 w-12" />
+              <p className="text-sm font-medium">Pas de carte virtuelle</p>
+              <p className="mt-1 text-xs">Effectuez votre premier rechargement pour créer la carte</p>
+            </div>
+          </Card>
         )}
-      
-        <Dialog onOpenChange={(open) => open && fetchChildDetails()}>
-          <DialogTrigger asChild>
-            <Button variant="default" className="w-full rounded-none rounded-b-md">
-              Voir détails
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center space-x-4">
-                <Avatar className="w-12 h-12">
-                  <AvatarImage 
-                    src={`https://avatar.vercel.sh/${account.id}.svg`} 
-                    alt={`${account.first_name}'s avatar`} 
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 mt-4">
+          <Dialog open={isDetailsDialogOpen} onOpenChange={(open) => {
+            setIsDetailsDialogOpen(open);
+            if (open) fetchChildDetails();
+          }}>
+            <DialogTrigger asChild>
+              <Button className="flex-1">
+                <Eye className="mr-2 h-4 w-4" />
+                Voir détails
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <div className="flex justify-between items-center pr-4">
+                  <div>
+                    <DialogTitle>Détails du compte</DialogTitle>
+                    <DialogDescription>
+                      Statistiques et historique des achats de {account.first_name}
+                    </DialogDescription>
+                  </div>
+                  <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
+                    <Pen className="h-4 w-4 mr-2" />
+                    Modifier
+                  </Button>
+                </div>
+              </DialogHeader>
+
+              {isEditDialogOpen ? (
+                <div className="mt-6">
+                  <EditChildProfileForm 
+                    childAccount={{
+                      ...account,
+                      banned_categories: account.banned_categories || [],
+                      age_restrictions: account.age_restrictions || []
+                    }} 
+                    onSuccess={() => {
+                      setIsEditDialogOpen(false);
+                      router.refresh();
+                    }}
                   />
-                  <AvatarFallback>
-                    {account.first_name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h2 className="text-2xl font-bold">{account.first_name} {account.last_name}</h2>
-                  <p className="text-sm text-muted-foreground">{account.email}</p>
                 </div>
-              </DialogTitle>
-              <DialogDescription>
-                Détails financiers et activités récentes
-              </DialogDescription>
-            </DialogHeader>
+              ) : (
+                <Tabs defaultValue="stats" className="mt-4">
+                  <TabsList>
+                    <TabsTrigger value="stats">
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Statistiques
+                    </TabsTrigger>
+                    <TabsTrigger value="purchases">
+                      <GamepadIcon className="h-4 w-4 mr-2" />
+                      Achats
+                    </TabsTrigger>
+                  </TabsList>
 
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
-                <TabsTrigger value="achats">Achats</TabsTrigger>
-                <TabsTrigger value="categories">Catégories</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview">
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                  <Card className="p-4 text-center">
-                    <CreditCard className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                    <h4 className="font-semibold">{details?.currentBalance.toFixed(2) || '0.00'} €</h4>
-                    <p className="text-sm text-muted-foreground">Solde actuel</p>
-                  </Card>
-                  <Card className="p-4 text-center">
-                    <TrendingUp className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                    <h4 className="font-semibold">{details?.totalSpent.toFixed(2) || '0.00'} €</h4>
-                    <p className="text-sm text-muted-foreground">Total dépensé</p>
-                  </Card>
-                  <Card className="p-4 text-center">
-                    <GamepadIcon className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                    <h4 className="font-semibold">{details?.maxMonthlySpend.toFixed(2) || '0.00'} €</h4>
-                    <p className="text-sm text-muted-foreground">Allocation mensuelle</p>
-                  </Card>
-                </div>
-                <Progress 
-                  value={(details?.totalSpent || 0) / (details?.maxMonthlySpend || 1) * 100} 
-                  className="mt-4" 
-                />
-                <p className="text-sm text-muted-foreground text-center mt-2">
-                  {((details?.totalSpent || 0) / (details?.maxMonthlySpend || 1) * 100).toFixed(0)}% de l'allocation utilisé
-                </p>
-              </TabsContent>
-
-              <TabsContent value="achats" className="space-y-4 p-2">
-                {details?.recentPurchases.length ? (
-                  <div className="grid gap-3">
-                    {details.recentPurchases.map((purchase) => (
-                      <Card key={purchase.id} className="p-4 space-y-3">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-1">
-                            <h4 className="font-semibold text-lg">{purchase.details.game_name}</h4>
-                            {purchase.details.description && (
-                              <p className="text-sm text-muted-foreground line-clamp-2">
-                                {purchase.details.description}
-                              </p>
-                            )}
-                          </div>
-                          <h4 className="font-semibold text-red-500 text-lg">
-                            -{ purchase.amount.toFixed(2) } €
-                          </h4>
-                        </div>
-                        
-                        <div className="flex justify-between items-center">
-                          <div className="flex space-x-2">
-                            <Badge variant="secondary" className="bg-indigo-700 text-white hover:bg-indigo-700 hover:text-white">
-                              {purchase.category}
-                            </Badge>
-                            <Badge variant="destructive" className="text-xs hover:bg-red-600 hover:text-white">
-                              Âge: {purchase.details.age_restriction}
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {purchase.date}
-                          </div>
-                        </div>
-                        
-                        <div className="flex space-x-2">
-                          <Badge variant="secondary" className="bg-indigo-500 text-white hover:bg-indigo-500 hover:text-white">
-                            Vendeur: {purchase.merchant}
-                          </Badge>
-                          {purchase.details.platform && (
-                            <Badge variant="secondary" className="bg-indigo-500 text-white hover:bg-indigo-500 hover:text-white">
-                              Plateforme: {purchase.details.platform}
-                            </Badge>
-                          )}
-                        </div>
+                  <TabsContent value="stats" className="space-y-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      <Card className="p-4 text-center">
+                        <CreditCard className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                        <h4 className="font-semibold">{details?.currentBalance.toFixed(2) || '0.00'} €</h4>
+                        <p className="text-sm text-muted-foreground">Solde actuel</p>
                       </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center text-muted-foreground py-16">
-                    <p className="text-lg">Il n'y a pas encore d'achats</p>
-                    <p className="text-sm">Vos achats apparaîtront ici</p>
-                  </div>
-                )}
-              </TabsContent>
+                      <Card className="p-4 text-center">
+                        <TrendingUp className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                        <h4 className="font-semibold">{details?.totalSpent.toFixed(2) || '0.00'} €</h4>
+                        <p className="text-sm text-muted-foreground">Total dépensé</p>
+                      </Card>
+                      <Card className="p-4 text-center">
+                        <GamepadIcon className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                        <h4 className="font-semibold">{details?.maxMonthlySpend.toFixed(2) || '0.00'} €</h4>
+                        <p className="text-sm text-muted-foreground">Allocation mensuelle</p>
+                      </Card>
+                    </div>
 
-              <TabsContent value="categories" className="flex items-center justify-center">
-                {details?.spendingByCategory.length ? (
-                  <div className="w-full space-y-2">
-                    {details.spendingByCategory.map((category) => (
-                      <Card key={category.category} className="p-3 mb-2">
+                    {details?.spendingByCategory.map((category) => (
+                      <Card key={category.category} className="p-3">
                         <div className="flex justify-between items-center mb-2">
                           <h4 className="font-semibold">{category.category}</h4>
                           <span className="text-muted-foreground">{category.amount.toFixed(2)} €</span>
@@ -293,18 +272,55 @@ export function ChildCard({ account }: { account: ChildAccount }) {
                         </p>
                       </Card>
                     ))}
-                  </div>
-                ) : (
-                  <div className="text-center text-muted-foreground py-16">
-                    <p>Aucune catégorie de dépenses</p>
-                    <p className="text-sm">Vos catégories apparaîtront ici</p>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </DialogContent>
-        </Dialog>
-      </Card>
-    </div>
+                  </TabsContent>
+
+                  <TabsContent value="purchases" className="space-y-4">
+                    {details?.recentPurchases.length ? (
+                      <div className="grid gap-3">
+                        {details.recentPurchases.map((purchase) => (
+                          <Card key={purchase.id} className="p-4 space-y-3">
+                            <div className="flex justify-between items-start">
+                              <div className="space-y-1">
+                                <h4 className="font-semibold text-lg">{purchase.details.game_name}</h4>
+                                {purchase.details.description && (
+                                  <p className="text-sm text-muted-foreground line-clamp-2">
+                                    {purchase.details.description}
+                                  </p>
+                                )}
+                              </div>
+                              <h4 className="font-semibold text-red-500 text-lg">
+                                -{purchase.amount.toFixed(2)} €
+                              </h4>
+                            </div>
+                            
+                            <div className="flex justify-between items-center">
+                              <div className="flex space-x-2">
+                                <Badge variant="secondary" className="bg-indigo-700 text-white">
+                                  {purchase.category}
+                                </Badge>
+                                <Badge variant="destructive">
+                                  Âge: {purchase.details.age_restriction}
+                                </Badge>
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {purchase.date}
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>Aucun achat pour le moment</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+    </Card>
   );
 }

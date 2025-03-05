@@ -67,8 +67,6 @@ export function Overview() {
             throw childAccountsError;
           }
 
-          console.log('Fetched child accounts:', childAccounts);
-
           setChildAccounts(childAccounts);
         }
       } catch (error: any) {

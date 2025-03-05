@@ -20,7 +20,6 @@ export default function AboutPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="space-y-8">
-        {/* Hero Section */}
         <section className="text-center space-y-4">
           <GraduationCapIcon className="h-16 w-16 mx-auto text-primary" />
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
@@ -31,7 +30,6 @@ export default function AboutPage() {
           </p>
         </section>
 
-        {/* Project Description */}
         <section className="space-y-6">
           <Card className="p-6 text-center bg-indigo-50 border-2 border-indigo-200">
             <div>
@@ -58,7 +56,6 @@ export default function AboutPage() {
           </Card>
         </section>
 
-        {/* Features */}
         <section className="space-y-6 bg-gray-50 p-8 rounded-xl">
           <h2 className="text-2xl font-semibold text-center">Nos Solutions Innovantes</h2>
           <div className="grid gap-6 md:grid-cols-3">
@@ -89,7 +86,6 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Team */}
         <section className="space-y-6">
           <div className="text-center space-y-2">
             <UsersIcon className="h-10 w-10 mx-auto text-primary" />

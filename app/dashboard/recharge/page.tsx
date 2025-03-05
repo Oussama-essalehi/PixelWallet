@@ -206,7 +206,7 @@ export default function RechargePage() {
                 onChange={(e) => setAmount(e.target.value)}
                 min="0"
                 max="1000"
-                step="0.01"
+                step="1"
               />
               <p className="text-sm text-gray-500">
                 Note: Des frais de service de 2.9% + 0.30€ seront appliqués.

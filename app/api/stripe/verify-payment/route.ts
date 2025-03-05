@@ -13,7 +13,6 @@ const roundToTwo = (num: number): number => {
 export async function POST(req: Request) {
   try {
     const requestBody = await req.json();
-    console.log('Incoming request body:', requestBody);
 
     const { sessionId } = requestBody;
 
@@ -54,7 +53,7 @@ export async function POST(req: Request) {
       .eq('child_account_id', childAccountId)
       .single();
 
-    if (cardError && cardError.code !== 'PGRST116') { // PGRST116 is "not found" error
+    if (cardError && cardError.code !== 'PGRST116') {
       throw cardError;
     }
 
@@ -114,7 +113,6 @@ export async function POST(req: Request) {
               amount: parseFloat(childAccount.max_monthly_spend) * 100,
               interval: 'monthly'
             },
-            {}
           ]
         }
       });

@@ -171,16 +171,6 @@ CREATE TABLE notifications (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- Spending limits table
-CREATE TABLE spending_limits (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    child_account_id UUID REFERENCES child_accounts(id) ON DELETE CASCADE,
-    daily_limit DECIMAL(10,2) NOT NULL,
-    weekly_limit DECIMAL(10,2) NOT NULL,
-    monthly_limit DECIMAL(10,2) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
-);
-
 -- Game purchases table
 CREATE TABLE game_purchases (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -486,3 +476,162 @@ CREATE INDEX idx_child_accounts_user_id ON child_accounts(user_id);
 CREATE INDEX idx_transactions_child_account_id ON recharges(child_account_id);
 CREATE INDEX idx_game_purchases_child_account ON game_purchases(child_account_id);
 CREATE INDEX idx_game_purchases_purchase_date ON game_purchases(purchase_date);
+
+-- Table pour gérer le niveau et l'XP des utilisateurs
+CREATE TABLE user_progression (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    child_account_id UUID REFERENCES child_accounts(id) ON DELETE CASCADE,
+    level INTEGER DEFAULT 1,
+    current_xp INTEGER DEFAULT 0,
+    total_xp INTEGER DEFAULT 0,
+    daily_streak INTEGER DEFAULT 0,
+    last_connection TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Table pour les défis/missions
+CREATE TABLE challenges (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('daily', 'weekly', 'monthly', 'achievement')),
+    category TEXT NOT NULL CHECK (category IN ('savings', 'learning', 'engagement')),
+    difficulty TEXT NOT NULL CHECK (difficulty IN ('easy', 'medium', 'hard')),
+    xp_reward INTEGER NOT NULL,
+    coins_reward INTEGER DEFAULT 0,
+    required_level INTEGER DEFAULT 1,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Table pour suivre la progression des défis par utilisateur
+CREATE TABLE user_challenges (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    child_account_id UUID REFERENCES child_accounts(id) ON DELETE CASCADE,
+    challenge_id UUID REFERENCES challenges(id) ON DELETE CASCADE,
+    status TEXT NOT NULL CHECK (status IN ('in_progress', 'completed', 'failed')),
+    progress INTEGER DEFAULT 0,
+    completed_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    UNIQUE(child_account_id, challenge_id)
+);
+
+-- Table pour les récompenses/badges
+CREATE TABLE rewards (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('badge', 'avatar', 'background', 'title')),
+    rarity TEXT NOT NULL CHECK (rarity IN ('common', 'rare', 'epic', 'legendary')),
+    unlock_condition TEXT NOT NULL,
+    image_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Table pour les récompenses débloquées par utilisateur
+CREATE TABLE user_rewards (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    child_account_id UUID REFERENCES child_accounts(id) ON DELETE CASCADE,
+    reward_id UUID REFERENCES rewards(id) ON DELETE CASCADE,
+    unlocked_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    equipped BOOLEAN DEFAULT false,
+    UNIQUE(child_account_id, reward_id)
+);
+
+-- Table pour les quiz financiers
+CREATE TABLE quizzes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    difficulty TEXT NOT NULL CHECK (difficulty IN ('easy', 'medium', 'hard')),
+    category TEXT NOT NULL,
+    xp_reward INTEGER NOT NULL,
+    coins_reward INTEGER DEFAULT 0,
+    required_level INTEGER DEFAULT 1,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Table pour les questions de quiz
+CREATE TABLE quiz_questions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    quiz_id UUID REFERENCES quizzes(id) ON DELETE CASCADE,
+    question TEXT NOT NULL,
+    correct_answer TEXT NOT NULL,
+    wrong_answers TEXT[] NOT NULL,
+    explanation TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Table pour suivre les quiz complétés par utilisateur
+CREATE TABLE user_quizzes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    child_account_id UUID REFERENCES child_accounts(id) ON DELETE CASCADE,
+    quiz_id UUID REFERENCES quizzes(id) ON DELETE CASCADE,
+    score INTEGER NOT NULL,
+    completed_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    UNIQUE(child_account_id, quiz_id)
+);
+
+-- Ajouter une colonne coins à child_accounts pour la monnaie virtuelle
+ALTER TABLE child_accounts ADD COLUMN IF NOT EXISTS coins INTEGER DEFAULT 0;
+
+-- Activer RLS sur toutes les nouvelles tables
+ALTER TABLE user_progression ENABLE ROW LEVEL SECURITY;
+ALTER TABLE challenges ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_challenges ENABLE ROW LEVEL SECURITY;
+ALTER TABLE rewards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_rewards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE quizzes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE quiz_questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_quizzes ENABLE ROW LEVEL SECURITY;
+
+-- Créer les politiques d'accès
+-- Pour user_progression
+CREATE POLICY "Users can view their own progression"
+    ON user_progression FOR SELECT
+    USING (child_account_id IN (
+        SELECT id FROM child_accounts WHERE user_id = auth.uid()
+    ));
+
+-- Pour challenges
+CREATE POLICY "Everyone can view challenges"
+    ON challenges FOR SELECT
+    USING (true);
+
+-- Pour user_challenges
+CREATE POLICY "Users can view their own challenges"
+    ON user_challenges FOR SELECT
+    USING (child_account_id IN (
+        SELECT id FROM child_accounts WHERE user_id = auth.uid()
+    ));
+
+-- Trigger pour mettre à jour l'XP et le niveau
+CREATE OR REPLACE FUNCTION update_user_level()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Calculer le nouveau niveau basé sur l'XP totale
+    -- Par exemple : chaque niveau nécessite (niveau * 1000) XP
+    NEW.level = FLOOR(POWER(NEW.total_xp / 1000.0, 0.5)) + 1;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_level
+    BEFORE UPDATE ON user_progression
+    FOR EACH ROW
+    EXECUTE FUNCTION update_user_level();
+
+-- Trigger pour créer une entrée user_progression lors de la création d'un child_account
+CREATE OR REPLACE FUNCTION create_user_progression()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO user_progression (child_account_id)
+    VALUES (NEW.id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_create_user_progression
+    AFTER INSERT ON child_accounts
+    FOR EACH ROW
+    EXECUTE FUNCTION create_user_progression();

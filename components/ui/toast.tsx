@@ -4,6 +4,7 @@ import * as React from 'react';
 import * as ToastPrimitives from '@radix-ui/react-toast';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { X } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { cn } from '@/lib/utils';
 
@@ -115,6 +116,13 @@ ToastDescription.displayName = ToastPrimitives.Description.displayName;
 type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>;
 
 type ToastActionElement = React.ReactElement<typeof ToastAction>;
+
+export const showXPNotification = (amount: number) => {
+  toast.success(`+${amount}XP`, {
+    description: "Connexion quotidienne réussie !",
+    duration: 3000,
+  });
+};
 
 export {
   type ToastProps,

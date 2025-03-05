@@ -5,7 +5,6 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ChildDashboardOverview } from '@/components/child-dashboard/overview';
-import { AvatarSection } from '@/components/child-dashboard/avatar-section';
 import type { ChildAccount } from '@/lib/types';
 
 export default function ChildDashboardPage() {
@@ -65,13 +64,7 @@ export default function ChildDashboardPage() {
   if (!account) return null;
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold mb-8">
-        Content de te revoir, {account.first_name} !
-      </h1>
-
-      <AvatarSection account={account} monthlySpent={monthlySpent} />
-      
+    <div className="container mx-auto py-8 px-4">      
       <div className="mt-8">
         <ChildDashboardOverview account={account} />
       </div>

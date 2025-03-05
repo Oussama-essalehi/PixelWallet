@@ -41,12 +41,29 @@ export default function AddChildPage() {
           first_name: formData.firstName,
           last_name: formData.lastName,
           date_of_birth: formData.dateOfBirth,
-          email: childEmail
+          gender: formData.gender,
+          email: childEmail,
+          coins: 0,
+          age_restrictions: formData.ageRestrictions
         })
         .select()
         .single();
 
       if (childError) throw childError;
+
+      // Initialiser la progression
+      const { error: progressError } = await supabase
+        .from('user_progression')
+        .insert({
+          child_account_id: childAccount.id,
+          level: 1,
+          current_xp: 0,
+          total_xp: 0,
+          daily_streak: 0,
+          last_connection: new Date().toISOString()
+        });
+
+      if (progressError) throw progressError;
 
       toast({
         title: 'Compte enfant créé',

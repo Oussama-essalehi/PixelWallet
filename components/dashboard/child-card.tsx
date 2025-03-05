@@ -14,12 +14,22 @@ import {
   GamepadIcon, 
   Pen, 
   TrendingUp,
-  Eye
+  Eye,
+  Shield,
+  Coins,
+  FileQuestion,
+  CircleUserRound,
+  Crown,
+  Star,
+  Trophy,
+  Medal,
+  Sparkles
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/lib/database.types';
 import { VirtualCard } from '../child-dashboard/virtual-card';
 import { EditChildProfileForm } from '../child-account/edit-profile-form';
+import { calculateLevelProgress } from '@/lib/xp-manager';
 
 type ChildAccount = Database['public']['Tables']['child_accounts']['Row'] & {
   parent_id: string;
@@ -69,7 +79,64 @@ interface ChildDetails {
     platform?: string;
     description?: string;
   }>;
+  xp: number;
+  coins: number;
+  quizzesTaken: number;
+  quizzesPassed: number;
+  dailyStreak: number;
+  lastConnection: string | null;
 }
+
+interface Reward {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  color: string;
+}
+
+const getRankForLevel = (level: number): Reward => {
+  if (level >= 20) return {
+    title: "Maître du jeu",
+    description: "Expert en gaming et gestion",
+    icon: <Crown className="h-4 w-4" />,
+    color: "bg-yellow-500"
+  };
+  if (level >= 15) return {
+    title: "Expert",
+    description: "Joueur chevronné",
+    icon: <Star className="h-4 w-4" />,
+    color: "bg-purple-500"
+  };
+  if (level >= 10) return {
+    title: "Confirmé",
+    description: "Joueur expérimenté",
+    icon: <Trophy className="h-4 w-4" />,
+    color: "bg-blue-500"
+  };
+  if (level >= 5) return {
+    title: "Intermédiaire",
+    description: "En bonne progression",
+    icon: <Medal className="h-4 w-4" />,
+    color: "bg-green-500"
+  };
+  return {
+    title: "Débutant",
+    description: "Début de l'aventure",
+    icon: <Sparkles className="h-4 w-4" />,
+    color: "bg-indigo-500"
+  };
+};
+
+const calculateLevel = (xp: number) => {
+  return Math.floor(Math.sqrt(xp / 100)) + 1;
+};
+
+const calculateLevelProgress = (xp: number) => {
+  const currentLevel = calculateLevel(xp);
+  const currentLevelXP = Math.pow(currentLevel - 1, 2) * 100;
+  const nextLevelXP = Math.pow(currentLevel, 2) * 100;
+  return ((xp - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100;
+};
 
 export function ChildCard({ account }: { account: ChildAccount }) {
   const router = useRouter();
@@ -79,7 +146,6 @@ export function ChildCard({ account }: { account: ChildAccount }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const fetchChildDetails = async () => {
-    if (details) return;
     setLoading(true);
     try {
       // Fetch game purchases
@@ -114,6 +180,25 @@ export function ChildCard({ account }: { account: ChildAccount }) {
         }))
         .sort((a, b) => b.amount - a.amount);
 
+      // Fetch progression and quizzes
+      const [
+        progressionResponse,
+        quizzesResponse
+      ] = await Promise.all([
+        supabase
+          .from('user_progression')
+          .select('*')
+          .eq('child_account_id', account.id)
+          .single(),
+        
+        supabase
+          .from('user_quizzes')
+          .select('*')
+          .eq('child_account_id', account.id)
+      ]);
+
+      const xp = progressionResponse.data?.total_xp || 0;
+      
       setDetails({
         totalSpent,
         currentBalance: account.virtual_cards?.balance || 0,
@@ -136,7 +221,13 @@ export function ChildCard({ account }: { account: ChildAccount }) {
             platform: purchase.platform,
             description: purchase.description
           }
-        }))
+        })),
+        xp,
+        coins: account.coins || 0,
+        quizzesTaken: quizzesResponse.data?.length || 0,
+        quizzesPassed: quizzesResponse.data?.filter(q => q.score >= 2).length || 0,
+        dailyStreak: progressionResponse.data?.daily_streak || 0,
+        lastConnection: progressionResponse.data?.last_connection
       });
     } catch (error) {
       console.error('Error fetching child details:', error);
@@ -144,9 +235,11 @@ export function ChildCard({ account }: { account: ChildAccount }) {
       setLoading(false);
     }
   };
-
-  console.log(account.first_name, account.last_name, account.virtual_cards?.last4);
   
+  useEffect(() => {
+    fetchChildDetails();
+  }, [account.id]);
+
   return (
     <Card className="overflow-hidden">
       <div className="p-6">
@@ -169,12 +262,13 @@ export function ChildCard({ account }: { account: ChildAccount }) {
           <VirtualCard
             firstName={account.first_name}
             lastName={account.last_name}
-            last4={account.virtual_cards.last4}
             brand={account.virtual_cards.brand}
+            last4={account.virtual_cards.last4}
             expMonth={account.virtual_cards.exp_month}
             expYear={account.virtual_cards.exp_year}
             status={account.virtual_cards.status}
             currency={account.virtual_cards.currency}
+            cardId={account.virtual_cards.stripe_card_id}
           />
         ) : (
           <Card className="relative h-[200px] w-[350px] overflow-hidden rounded-xl bg-gradient-to-br from-gray-200 to-gray-300 p-6">
@@ -214,6 +308,44 @@ export function ChildCard({ account }: { account: ChildAccount }) {
                 </div>
               </DialogHeader>
 
+              {/* Nouvelle section de stats en haut de la popup */}
+              <div className="mb-6 mt-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card className="p-4">
+                    <div className="flex flex-col items-center">
+                      <CircleUserRound className="h-5 w-5 text-indigo-600 mb-2" />
+                      <div className="text-lg font-bold">
+                        {details ? calculateLevel(details.xp) : 1}
+                      </div>
+                      <div className="text-sm text-gray-500">Niveau</div>
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="flex flex-col items-center">
+                      <TrendingUp className="h-5 w-5 text-green-600 mb-2" />
+                      <div className="text-lg font-bold">{details?.xp || 0}</div>
+                      <div className="text-sm text-gray-500">XP Total</div>
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="flex flex-col items-center">
+                      <Coins className="h-5 w-5 text-yellow-600 mb-2" />
+                      <div className="text-lg font-bold">{details?.coins || 0}</div>
+                      <div className="text-sm text-gray-500">Coins</div>
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="flex flex-col items-center">
+                      <FileQuestion className="h-5 w-5 text-purple-600 mb-2" />
+                      <div className="text-lg font-bold">
+                        {details?.quizzesPassed || 0}/{details?.quizzesTaken || 0}
+                      </div>
+                      <div className="text-sm text-gray-500">Quiz réussis</div>
+                    </div>
+                  </Card>
+                </div>
+              </div>
+
               {isEditDialogOpen ? (
                 <div className="mt-6">
                   <EditChildProfileForm 
@@ -229,11 +361,15 @@ export function ChildCard({ account }: { account: ChildAccount }) {
                   />
                 </div>
               ) : (
-                <Tabs defaultValue="stats" className="mt-4">
+                <Tabs defaultValue="stats">
                   <TabsList>
                     <TabsTrigger value="stats">
                       <TrendingUp className="h-4 w-4 mr-2" />
                       Statistiques
+                    </TabsTrigger>
+                    <TabsTrigger value="progression">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Progression
                     </TabsTrigger>
                     <TabsTrigger value="purchases">
                       <GamepadIcon className="h-4 w-4 mr-2" />
@@ -272,6 +408,49 @@ export function ChildCard({ account }: { account: ChildAccount }) {
                         </p>
                       </Card>
                     ))}
+                  </TabsContent>
+
+                  <TabsContent value="progression" className="space-y-4">
+                    <div className="grid gap-4">
+                      <Card className="p-4">
+                        <h3 className="font-semibold mb-2">Progression</h3>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span>Niveau {details ? calculateLevel(details.xp) : 1}</span>
+                            <span>{details?.xp || 0} XP</span>
+                          </div>
+                          <Progress 
+                            value={calculateLevelProgress(details?.xp || 0)} 
+                            className="h-2"
+                          />
+                          {details?.lastConnection && (
+                            <p className="text-sm text-gray-500 mt-2">
+                              Dernière connexion: {new Date(details.lastConnection).toLocaleDateString('fr-FR')}
+                            </p>
+                          )}
+                        </div>
+                      </Card>
+
+                      <Card className="p-4">
+                        <h3 className="font-semibold mb-2">Quiz</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <div className="text-2xl font-bold">{details?.quizzesPassed || 0}</div>
+                            <div className="text-sm text-gray-500">Quiz réussis</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold">{details?.quizzesTaken || 0}</div>
+                            <div className="text-sm text-gray-500">Quiz tentés</div>
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card className="p-4">
+                        <h3 className="font-semibold mb-2">Série quotidienne</h3>
+                        <div className="text-2xl font-bold">{details?.dailyStreak || 0} jours</div>
+                        <div className="text-sm text-gray-500">de connexion consécutifs</div>
+                      </Card>
+                    </div>
                   </TabsContent>
 
                   <TabsContent value="purchases" className="space-y-4">

@@ -10,6 +10,11 @@ interface OverviewStatsProps {
   maxMonthlySpend: number;
 }
 
+const iconProps = {
+  className: "w-5 h-5",
+  strokeWidth: 2
+};
+
 export function OverviewStats({
   dailySpent,
   maxDailyPurchases,

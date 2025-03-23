@@ -63,7 +63,10 @@ export default function AddChildPage() {
           last_connection: new Date().toISOString()
         });
 
-      if (progressError) throw progressError;
+      if (progressError) {
+        console.error('Error initializing progression:', progressError);
+        throw progressError;
+      }
 
       toast({
         title: 'Compte enfant créé',

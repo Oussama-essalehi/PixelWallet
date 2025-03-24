@@ -209,9 +209,9 @@ export default function RechargePage() {
                 step="1"
               />
               <p className="text-sm text-gray-500">
-                Note: Des frais de service de 2.9% + 0.30€ seront appliqués.
+                Note: Des frais de service de 4% + 0.30€ seront appliqués.
                 {parseFloat(amount) > 0 && parseFloat(amount) <= 100 && (
-                  <> Le montant final sera de {(parseFloat(amount) - (parseFloat(amount) * 0.028 + 0.3)).toFixed(2)}€ après frais.</>
+                  <> Le montant final sera de {(parseFloat(amount) - (parseFloat(amount) * 0.04 + 0.3)).toFixed(2)}€ après frais.</>
                 )}
               </p>
             </div>

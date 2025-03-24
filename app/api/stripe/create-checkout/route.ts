@@ -41,10 +41,7 @@ export async function POST(req: Request) {
     // Get child account details
     const { data: childAccount, error: childError } = await supabase
       .from('child_accounts')
-      .select(`
-        *,
-        virtual_cards (*)
-      `)
+      .select('*')
       .eq('id', childAccountId)
       .single();
 
@@ -53,17 +50,29 @@ export async function POST(req: Request) {
       throw new Error('Child account not found');
     }
 
+    // Check if child has a virtual card
+    const { data: virtualCard, error: virtualCardError } = await supabase
+      .from('virtual_cards')
+      .select('id')
+      .eq('child_account_id', childAccountId)
+      .single();
+
+    if (virtualCardError && virtualCardError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+      console.error('Error checking virtual card:', virtualCardError);
+      throw new Error('Error checking virtual card status');
+    }
+
     // Calculate all fees
-    const hasVirtualCard = childAccount.virtual_cards && childAccount.virtual_cards.length > 0;
+    const hasVirtualCard = !!virtualCard;
     
     // Virtual card creation fee (0.10€, only for first time)
-    const virtualCardFee = hasVirtualCard ? 0 : 0.10;
+    const virtualCardFee = hasVirtualCard ? 0 : 0.10; 
     
-    // Stripe processing fee (4% with maximum 2€)
-    const stripeFee = roundToTwo(Math.min(parsedAmount * 0.04, 2));
+    // Stripe processing fee (3% + 0.30€ with maximum 2€)
+    const stripeFee = roundToTwo(Math.min(parsedAmount * 0.03, 2)) + 0.30;
     
-    // PixelWallet platform fee (2.5% of the amount)
-    const platformFee = roundToTwo(parsedAmount * 0.025);
+    // PixelWallet platform fee (1% of the amount)
+    const platformFee = roundToTwo(parsedAmount * 0.01);
     
     // Calculate final amount that will be loaded to the card
     const totalFees = roundToTwo(virtualCardFee + stripeFee + platformFee);
@@ -81,8 +90,8 @@ export async function POST(req: Request) {
               description: `
                 Montant initial: ${parsedAmount.toFixed(2)}€
                 ${!hasVirtualCard ? '- Frais de création de carte virtuelle: ' + virtualCardFee.toFixed(2) + '€\n' : ''}
-                - Frais Stripe (4%): ${stripeFee.toFixed(2)}€
-                - Frais PixelWallet (2.5%): ${platformFee.toFixed(2)}€
+                - Frais Stripe (3% + 0.30€): ${stripeFee.toFixed(2)}€
+                - Frais PixelWallet (1%): ${platformFee.toFixed(2)}€
                 = Montant final crédité: ${finalAmount.toFixed(2)}€
               `.trim(),
             },

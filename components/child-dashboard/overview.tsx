@@ -99,7 +99,7 @@ export function ChildDashboardOverview({ account }: ChildDashboardOverviewProps)
 
         // Si on arrive ici, c'est une nouvelle journée
         const isConsecutiveDay = lastLoginDate && 
-          format(addDays(new Date(lastLoginDate), 1), 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
+          format(new Date(lastLoginDate.getTime() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
 
         // Calculer le nouveau streak
         const newStreak = isConsecutiveDay 
@@ -107,13 +107,17 @@ export function ChildDashboardOverview({ account }: ChildDashboardOverviewProps)
           : 1;
 
         // Mettre à jour last_connection et daily_streak
-        await supabase
+        const { data: updatedProgression, error: updateError } = await supabase
           .from('user_progression')
           .update({ 
             last_connection: now.toISOString(),
             daily_streak: newStreak
           })
-          .eq('child_account_id', account.id);
+          .eq('child_account_id', account.id)
+          .select()
+          .single();
+
+        if (updateError) throw updateError;
 
         // Attribuer XP pour la connexion quotidienne
         const result = await awardXP(account.id, XP_ACTIONS.DAILY_LOGIN, 'DAILY_LOGIN');
@@ -121,7 +125,7 @@ export function ChildDashboardOverview({ account }: ChildDashboardOverviewProps)
         if (result.success) {
           setDailyBonusAwarded(true);
           toast.success(`+${XP_ACTIONS.DAILY_LOGIN} XP`, {
-            description: `Bonus de connexion quotidienne ! (${newStreak} jours consécutifs)`,
+            description: `Bonus de connexion quotidienne ! (${updatedProgression.daily_streak} jours consécutifs)`,
             duration: 3000,
           });
 

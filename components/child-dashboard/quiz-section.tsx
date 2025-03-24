@@ -24,6 +24,7 @@ interface Quiz {
   difficulty: string;
   xp_reward: number;
   coins_reward: number;
+  questions_count: number;
 }
 
 interface Question {
@@ -61,11 +62,28 @@ export function QuizSection({ childAccountId }: QuizSectionProps) {
   }, []);
 
   async function fetchQuizzes() {
-    const { data } = await supabase
+    const { data: quizzesData } = await supabase
       .from('quizzes')
       .select('*')
       .order('created_at');
-    if (data) setQuizzes(data);
+
+    if (quizzesData) {
+      // Récupérer le nombre de questions pour chaque quiz
+      const quizzesWithCount = await Promise.all(
+        quizzesData.map(async (quiz) => {
+          const { count } = await supabase
+            .from('quiz_questions')
+            .select('*', { count: 'exact', head: true })
+            .eq('quiz_id', quiz.id);
+          
+          return {
+            ...quiz,
+            questions_count: count || 0
+          };
+        })
+      );
+      setQuizzes(quizzesWithCount);
+    }
   }
 
   async function fetchCompletedQuizzes() {
@@ -281,7 +299,7 @@ export function QuizSection({ childAccountId }: QuizSectionProps) {
                     </Badge>
                     <Badge variant="secondary" className={`flex items-center gap-2 px-3 py-1 rounded-full ${RARITY_COLORS.epic}`}>
                       <TrendingUp className="h-4 w-4" />
-                      <span>{quiz.xp_reward} XP</span>
+                      <span>{quiz.questions_count * 100} XP</span>
                     </Badge>
                     <Badge variant="secondary" className={`flex items-center gap-2 px-3 py-1 rounded-full ${RARITY_COLORS.rare}`}>
                       <Coins className="h-4 w-4" />

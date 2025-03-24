@@ -80,9 +80,9 @@ export async function POST(req: Request) {
           first_name: childAccount.first_name,
           last_name: childAccount.last_name,
           dob: {
-            day: new Date(childAccount.birth_date).getDate(),
-            month: new Date(childAccount.birth_date).getMonth() + 1,
-            year: new Date(childAccount.birth_date).getFullYear(),
+            day: new Date(parentData.birth_date).getDate(),
+            month: new Date(parentData.birth_date).getMonth() + 1,
+            year: new Date(parentData.birth_date).getFullYear(),
           },
         },
         billing: {
@@ -141,8 +141,8 @@ export async function POST(req: Request) {
     }
 
     // Calculate fees
-    const stripeFee = roundToTwo(Math.min(amount * 0.04, 2)); // 4% with max 2 euros
-    const pixelWalletFee = roundToTwo(amount * 0.025); // 2.5% fee
+    const stripeFee = roundToTwo(Math.min(amount * 0.03, 2)) + 0.30; // 3% + 0.30€ with max 2 euros
+    const pixelWalletFee = roundToTwo(amount * 0.01); // 1% 
 
     // Calculate final amount after fees
     const finalAmount = roundToTwo(amount - stripeFee - pixelWalletFee - virtualCardFee);

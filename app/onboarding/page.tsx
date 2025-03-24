@@ -50,6 +50,18 @@ export default function OnboardingPage() {
     setAgeError('');
 
     try {
+      // Validation du numéro de téléphone
+      const phoneRegex = /^\+[1-9]\d{1,14}$/;
+      if (!phoneRegex.test(formData.phone_number)) {
+        toast({
+          title: "Numéro de téléphone invalide",
+          description: "Le numéro de téléphone doit être au format international (ex: +33765458798)",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
       // Validate age (must be 18+)
       const birthDate = new Date(formData.birth_date);
       const today = new Date();
@@ -149,9 +161,13 @@ export default function OnboardingPage() {
               <Input
                 type="tel"
                 required
+                placeholder="+33765458798"
                 value={formData.phone_number}
                 onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
               />
+              <p className="text-sm text-gray-500 mt-1">
+                Format: +33XXXXXXXXX
+              </p>
             </div>
 
             <div>

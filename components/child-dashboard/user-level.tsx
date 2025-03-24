@@ -40,7 +40,11 @@ export function UserLevel({ childAccountId }: UserLevelProps) {
   const [coins, setCoins] = useState<number>(0);
   const [xp, setXP] = useState(0);
   const [currentRank, setCurrentRank] = useState<typeof RANK_REWARDS[number] | null>(null);
-  const [previousLevel, setPreviousLevel] = useState<number>(0);
+  const [previousLevel, setPreviousLevel] = useState<number>(() => {
+    // Récupérer le niveau précédent du localStorage
+    const storedLevel = localStorage.getItem(`previousLevel-${childAccountId}`);
+    return storedLevel ? parseInt(storedLevel, 10) : 0;
+  });
   
   const fetchProgress = async () => {
     const [progressData, coinsData] = await Promise.all([
@@ -68,7 +72,7 @@ export function UserLevel({ childAccountId }: UserLevelProps) {
     async function fetchData() {
       const { data } = await supabase
         .from('user_progression')
-        .select('current_xp')
+        .select('current_xp, level')
         .eq('child_account_id', childAccountId)
         .single();
       
@@ -85,9 +89,12 @@ export function UserLevel({ childAccountId }: UserLevelProps) {
           setCurrentRank(highestRank);
         }
 
-        // Check for level up and new rank
+        // Check for level up and new rank only if the level is higher than the stored level
         if (level > previousLevel) {
+          // Mettre à jour le niveau dans le localStorage
+          localStorage.setItem(`previousLevel-${childAccountId}`, level.toString());
           setPreviousLevel(level);
+          
           // Only check for reward if we've leveled up
           const reward = await checkAndAwardRankReward(childAccountId, level);
           if (reward) {

@@ -1,7 +1,37 @@
 'use client';
 
-import React, { useRef } from 'react'
+import * as THREE from 'three'
 import { useGLTF } from '@react-three/drei'
+
+const BOY_MODEL = '/models/avatar_boy2.glb';
+const GIRL_MODEL = '/models/avatar_girl2.glb';
+
+// Shape of the Ready Player Me .glb files in public/models
+type AvatarGLTF = {
+  nodes: {
+    Hips: THREE.Bone;
+    EyeLeft: THREE.SkinnedMesh;
+    EyeRight: THREE.SkinnedMesh;
+    Wolf3D_Head: THREE.SkinnedMesh;
+    Wolf3D_Teeth: THREE.SkinnedMesh;
+    Wolf3D_Hair: THREE.SkinnedMesh;
+    Wolf3D_Body: THREE.SkinnedMesh;
+    Wolf3D_Outfit_Bottom: THREE.SkinnedMesh;
+    Wolf3D_Outfit_Footwear: THREE.SkinnedMesh;
+    Wolf3D_Outfit_Top: THREE.SkinnedMesh;
+  };
+  materials: Record<
+    | 'Wolf3D_Eye'
+    | 'Wolf3D_Skin'
+    | 'Wolf3D_Teeth'
+    | 'Wolf3D_Hair'
+    | 'Wolf3D_Body'
+    | 'Wolf3D_Outfit_Bottom'
+    | 'Wolf3D_Outfit_Footwear'
+    | 'Wolf3D_Outfit_Top',
+    THREE.MeshStandardMaterial
+  >;
+};
 
 interface AvatarModelProps {
   gender?: 'M' | 'F';
@@ -9,8 +39,8 @@ interface AvatarModelProps {
 }
 
 export function AvatarModel({ gender, ...props }: AvatarModelProps) {
-  const modelPath = gender === 'F' ? 'models/avatar_girl2.glb' : 'models/avatar_boy2.glb';
-  const { nodes, materials } = useGLTF(modelPath);
+  const modelPath = gender === 'F' ? GIRL_MODEL : BOY_MODEL;
+  const { nodes, materials } = useGLTF(modelPath) as unknown as AvatarGLTF;
 
   return (
     <group {...props} dispose={null}>
@@ -77,9 +107,5 @@ export function AvatarModel({ gender, ...props }: AvatarModelProps) {
 }
 
 // Preload both models
-useGLTF.preload('models/avatar_boy2.glb');
-useGLTF.preload('models/avatar_girl.glb');
-
-// Preload both models
-useGLTF.preload('models/avatar_boy2.glb');
-useGLTF.preload('models/avatar_girl.glb');
+useGLTF.preload(BOY_MODEL);
+useGLTF.preload(GIRL_MODEL);

@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss';
+import plugin from 'tailwindcss/plugin';
 
 const config: Config = {
   darkMode: ['class'],
@@ -74,14 +75,14 @@ const config: Config = {
   },
   plugins: [
     require('tailwindcss-animate'),
-    function ({ addBase, config }) {
+    plugin(function ({ addBase }) {
       addBase({
         '*:focus': {
           outline: 'none',
           boxShadow: 'none',
         },
       });
-    },
+    }),
   ],
 };
 

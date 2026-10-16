@@ -1,30 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ChildCard } from './child-card';
+import { ChildCard, type ChildAccount } from './child-card';
 import { EmptyState } from './empty-state';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
-import { Database } from '@/lib/database.types';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
-
-type ChildAccount = Database['public']['Tables']['child_accounts']['Row'] & {
-  virtual_cards: {
-    id: string;
-    balance: number;
-    stripe_card_id: string;
-    stripe_cardholder_id: string;
-    last4: string;
-    brand: string;
-    exp_month: number;
-    exp_year: number;
-    status: string;
-    currency: string;
-  }[]
-};
 
 export function Overview() {
   const { user } = useAuth();
@@ -67,7 +51,16 @@ export function Overview() {
             throw childAccountsError;
           }
 
-          setChildAccounts(childAccounts);
+          // ChildCard expects a single card, but PostgREST returns the
+          // virtual_cards relation as an array
+          setChildAccounts(
+            (childAccounts ?? []).map((account) => ({
+              ...account,
+              virtual_cards: Array.isArray(account.virtual_cards)
+                ? account.virtual_cards[0]
+                : account.virtual_cards,
+            }))
+          );
         }
       } catch (error: any) {
         console.error('Error in fetchChildAccounts:', error);

@@ -29,9 +29,9 @@ import { supabase } from '@/lib/supabase';
 import { Database } from '@/lib/database.types';
 import { VirtualCard } from '../child-dashboard/virtual-card';
 import { EditChildProfileForm } from '../child-account/edit-profile-form';
-import { calculateLevelProgress } from '@/lib/xp-manager';
+import { calculateLevel, calculateLevelProgress } from '@/lib/xp-manager';
 
-type ChildAccount = Database['public']['Tables']['child_accounts']['Row'] & {
+export type ChildAccount = Database['public']['Tables']['child_accounts']['Row'] & {
   parent_id: string;
   banned_categories?: string[];
   age_restrictions?: string[];
@@ -125,17 +125,6 @@ const getRankForLevel = (level: number): Reward => {
     icon: <Sparkles className="h-4 w-4" />,
     color: "bg-indigo-500"
   };
-};
-
-const calculateLevel = (xp: number) => {
-  return Math.floor(Math.sqrt(xp / 100)) + 1;
-};
-
-const calculateLevelProgress = (xp: number) => {
-  const currentLevel = calculateLevel(xp);
-  const currentLevelXP = Math.pow(currentLevel - 1, 2) * 100;
-  const nextLevelXP = Math.pow(currentLevel, 2) * 100;
-  return ((xp - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100;
 };
 
 export function ChildCard({ account }: { account: ChildAccount }) {

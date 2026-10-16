@@ -62,7 +62,7 @@ export default function HistoriquePage() {
 
         if (error) throw error;
 
-        setTransactions(rechargeData as Transaction[]);
+        setTransactions(rechargeData as unknown as Transaction[]);
       } catch (error: any) {
         toast({
           title: 'Erreur',

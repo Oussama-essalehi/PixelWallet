@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
 
-export default function SuccessPage() {
+function SuccessPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -100,5 +100,14 @@ export default function SuccessPage() {
         </div>
       </Card>
     </div>
+  );
+}
+
+// useSearchParams() needs a Suspense boundary to prerender
+export default function SuccessPage() {
+  return (
+    <Suspense>
+      <SuccessPageContent />
+    </Suspense>
   );
 }

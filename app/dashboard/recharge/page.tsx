@@ -77,7 +77,7 @@ export default function RechargePage() {
           throw accountsError;
         }
 
-        setChildAccounts(accounts || []);
+        setChildAccounts((accounts || []) as unknown as ChildAccount[]);
       } catch (error: any) {
         console.error('Error in fetchChildAccounts:', error);
         toast({

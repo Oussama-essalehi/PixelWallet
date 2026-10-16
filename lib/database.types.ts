@@ -25,13 +25,6 @@ export type GamePurchaseCategory =
   | 'Puzzle'
   | 'Action';
 
-export type AgeRestriction = 
-  | '+18' 
-  | '+16' 
-  | '+12' 
-  | '+10' 
-  | 'All Ages';
-
 export interface Database {
   public: {
     Tables: {
@@ -42,6 +35,7 @@ export interface Database {
           last_name: string;
           email: string;
           balance: number;
+          coins: number;
           monthly_allowance: number | null;
           spending_limit: number | null;
           parent_id: string;

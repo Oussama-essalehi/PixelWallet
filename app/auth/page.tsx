@@ -3,8 +3,9 @@
 import { AuthForm } from '@/components/auth-form';
 import { Navbar } from '@/components/navbar';
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
-export default function AuthPage() {
+function AuthPageContent() {
   const searchParams = useSearchParams();
   const isSignUp = searchParams.get('signup') === 'true';
 
@@ -25,5 +26,14 @@ export default function AuthPage() {
         <AuthForm defaultTab={isSignUp ? 'signup' : 'signin'} />
       </main>
     </div>
+  );
+}
+
+// useSearchParams() needs a Suspense boundary to prerender
+export default function AuthPage() {
+  return (
+    <Suspense>
+      <AuthPageContent />
+    </Suspense>
   );
 }

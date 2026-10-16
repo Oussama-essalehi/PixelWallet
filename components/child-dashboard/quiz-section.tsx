@@ -286,7 +286,7 @@ export function QuizSection({ childAccountId }: QuizSectionProps) {
                   <div className="flex items-center gap-2 mt-2">
                     <Badge 
                       variant="secondary"
-                      className={`flex items-center gap-2 px-3 py-1 rounded-full ${DIFFICULTY_STYLES[translateDifficulty(quiz.difficulty)]}`}
+                      className={`flex items-center gap-2 px-3 py-1 rounded-full ${DIFFICULTY_STYLES[translateDifficulty(quiz.difficulty) as keyof typeof DIFFICULTY_STYLES]}`}
                     >
                       {quiz.difficulty === 'Difficile' ? (
                         <Crown className="h-4 w-4" />

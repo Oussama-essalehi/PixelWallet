@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Trophy, Flame, Coins, Lock } from 'lucide-react';
+import { Trophy, Flame, Coins, Lock, type LucideIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { calculateLevelFromXP } from '@/lib/xp-manager';
 import { checkAndAwardRankReward, RANK_REWARDS, RARITY_COLORS } from '@/lib/rewards-manager';
@@ -28,6 +28,9 @@ const iconProps = {
   className: "w-5 h-5",
   strokeWidth: 2 // Au lieu de stroke-width="2"
 };
+
+// Rank icons are stored by name in RANK_REWARDS
+const getRankIcon = (name: string) => Icons[name as keyof typeof Icons] as LucideIcon | undefined;
 
 const getRankForLevel = (level: number) => {
   return [...RANK_REWARDS]
@@ -157,7 +160,7 @@ export function UserLevel({ childAccountId }: UserLevelProps) {
   const progressPercentage = (currentLevelXP / nextLevelXP) * 100;
 
   // Get the icon component for rank
-  const RankIcon = currentRank ? Icons[currentRank.icon as keyof typeof Icons] : null;
+  const RankIcon = currentRank ? getRankIcon(currentRank.icon) : null;
 
   // Get the next rank
   const nextRank = RANK_REWARDS.find(rank => rank.level > level);
@@ -197,7 +200,7 @@ export function UserLevel({ childAccountId }: UserLevelProps) {
                     <p className="text-lg font-bold text-yellow-700">{coins}</p>
                   </div>
                 </div>
-                {progress?.daily_streak > 0 && (
+                {progress && progress.daily_streak > 0 && (
                   <div className="flex items-center gap-2 bg-orange-100 px-3 py-2 rounded-lg">
                     <Flame {...iconProps} className="text-orange-500" />
                     <div>
@@ -225,8 +228,8 @@ export function UserLevel({ childAccountId }: UserLevelProps) {
                     {/* Add lock icon */}
                     <Lock {...iconProps} />
                     {/* Get the next rank icon */}
-                    {Icons[nextRank.icon as keyof typeof Icons] && 
-                      React.createElement(Icons[nextRank.icon as keyof typeof Icons], {
+                    {getRankIcon(nextRank.icon) &&
+                      React.createElement(getRankIcon(nextRank.icon)!, {
                         ...iconProps
                       })
                     }

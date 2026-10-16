@@ -31,8 +31,11 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    const childAccountId = session.metadata.childAccountId;
-    const amount = roundToTwo(parseFloat(session.amount_total) / 100); // Convert from cents to euros
+    const childAccountId = session.metadata?.childAccountId;
+    if (!childAccountId || session.amount_total === null) {
+      throw new Error('Checkout session is missing payment details');
+    }
+    const amount = roundToTwo(session.amount_total / 100); // Convert from cents to euros
 
     // Get child account details
     const { data: childAccount, error: childError } = await supabase
